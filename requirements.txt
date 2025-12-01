@@ -1,0 +1,17 @@
+python:
+pip install pandas
+pip install pyyaml
+pip install PyMuPDF
+pip install flask
+pip install waitress
+
+pip install tk
+pip install customtkinter
+pip install pillow
+pip install pytesseract
+pip install openpyxl
+
+linux:
+sudo apt-get install python3-tk
+sudo apt-get install tk-dev
+sudo apt install tesseract-ocr

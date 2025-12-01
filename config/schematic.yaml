@@ -1,0 +1,70 @@
+
+#variable_type = {int, str} supported 
+#extension_type = {.xlsx, .csv} supported
+
+#elements_to_request = standaard wordt orderNr aangevraagt
+#toevoegen mist te gebruiken 
+
+#"C:\Users\Hacker\OneDrive\Bureaublad\IO-tester-V2\export"
+
+order_id_request_text: Enter your order without a V character 
+
+export_rack:
+  path: /mnt/c/Users/Hacker/OneDrive/Bureaublad/IO-tester-V2/export/excel
+  elements_to_request:
+   - variable: order_id
+     text: Enter your order without a V character
+     variable_type: int
+
+  file_elements: [Rack opbouw] 
+  file_exclude_elements: [] 
+  extension_type: .xlsx
+
+
+export_io:
+  path: /mnt/c/Users/Hacker/OneDrive/Bureaublad/IO-tester-V2/export/excel
+  elements_to_request:
+   - variable: order_id
+     text: Enter your order without a V character
+     variable_type: int
+
+  file_elements: [IO lijst] 
+  file_exclude_elements: [] 
+  extension_type: .xlsx
+
+
+export_schematic:
+  path: /mnt/c/Users/Hacker/OneDrive/Bureaublad/IO-tester-V2/export/schematic
+  elements_to_request:
+   - variable: order_id
+     text: Enter your order without a V character
+     variable_type: int
+
+  file_elements: [] 
+  file_exclude_elements: [Changes] 
+  extension_type: .pdf
+
+#X = horizontaal
+#Y = verticaal 
+
+page_nr:
+    box:
+    X_pos: 829 
+    Y_pos: 854
+    X_length: 45
+    Y_length: 339 
+    format: =%machine_type%+%kast_nr%/%pagina_nr%
+
+box_page_nr:
+  X_pos: 829 
+  Y_pos: 854
+  X_length: 45
+  Y_length: 339 
+
+
+
+
+
+
+
+
