@@ -3,9 +3,7 @@
 #extension_type = {.xlsx, .csv} supported
 
 #elements_to_request = standaard wordt orderNr aangevraagt
-#toevoegen mist te gebruiken 
 
-#"C:\Users\Hacker\OneDrive\Bureaublad\IO-tester-V2\export"
 
 order_id_request_text: Enter your order without a V character 
 

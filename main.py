@@ -17,9 +17,6 @@ from PIL import Image
 import pytesseract #https://www.geeksforgeeks.org/python/introduction-to-python-pytesseract-package/
 
 
-
-
-
 class Progression():
     def __init__(self):
         self.get_config()
@@ -134,12 +131,15 @@ class Schematic():
                             crop_rectangle = (box_page['Y_pos'], box_page['X_pos'], box_page['Y_pos'] + box_page['Y_length'], box_page['X_pos'] + box_page['X_length']) #(left, upper, right, lower)
                             cropped_im = image.crop(crop_rectangle)
 
-                            cropped_im.show()
-                            #pix.save(progress_path + '/schematic_jpg/E1_150_' + str(i) +'.jpg')
-                            
-                            text = pytesseract.image_to_string(cropped_im)
+                            cropped_im.show()                               
+                            pagetext = pytesseract.image_to_string(cropped_im)
 
-                            print(f'results: {text}')
+
+
+                            #=BHS+E3/535
+                            #pix.save(progress_path + '/schematic_jpg/E1_150_' + str(i) +'.jpg')
+
+                   
                       
 
                     else:

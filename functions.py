@@ -135,72 +135,7 @@ def yamlOperator(path, fileName, data=None):
     else:
         with open(filePath, 'w') as file:
             yaml.dump(data, file)
-
-
-def modelConfigFile(socket):
-    data = dict() 
     
-    data["instrument"] = socket.instrument
-    
-    indicatorArray = [] 
-    instrumentArray = [] 
-
-    for select in socket.indicator.info:
-        subArray = []
-        
-        subArray.append(select.id)
-        subArray.append(select.type)
-        subArray.append(select.value)
-        
-        indicatorArray.append(subArray)
-        
-    for select in socket.instrument.info:
-        subArray = []
-        subArray.append(select.type)
-        subArray.append(select.value)
-        
-        instrumentArray.append(subArray)
-
-    data["indicators"] = indicatorArray
-    data["types"] = instrumentArray 
-    
-
-def create_datetime(bars, index):
-    year  = bars.loc[index, 'year']
-    month = bars.loc[index, 'month']
-    day   = bars.loc[index, 'day']
-    hour  = bars.loc[index, 'hour']
-    minute= bars.loc[index, 'minute']
-    return datetime(int(year), int(month), int(day), int(hour), int(minute))
-
-
-
-
-def drawObject(drawSeries, drawType, tag='', beginBarsAgo=0, endBarsAgo=0, startY=0.0, endY=0.0, color='Red'):
-    draw_columns = ["drawType", "tag", "startBarsAgo", "endBarsAgo", "startY", "endY", "color"]
-   
-    df = pd.DataFrame(data=[[drawType.value, tag, beginBarsAgo, endBarsAgo, startY, endY, color]], columns=draw_columns)
-
-    if len(drawSeries[draw_columns[0]]) == 0:
-        drawSeries = df 
-    else:   
-        drawSeries = pd.concat([drawSeries, df])
-
-    return drawSeries
-
-
-def checkEnum(Enum, enumState):
-    check = False 
-                      
-    if type(enumState) == str:
-        check = Enum.name == enumState
-            
-    elif type(enumState) == int:
-        check = Enum.value == enumState 
-    else: 
-        check = Enum.value == enumState.value
-    return check 
-
 
 def formatOperator(format, formatItems=None, formatToDecrypt=None):
     formatItemList, formatSpaceList = [], []
