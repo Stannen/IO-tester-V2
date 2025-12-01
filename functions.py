@@ -142,7 +142,6 @@ def formatOperator(format, formatItems=None, formatToDecrypt=None):
     itemStartIndex, itemEndIndex, index = [], [], 0 
     item, space, enable = '', '', False 
     
-
     for char in format:
         if char == '%':
             if enable == False:
@@ -161,8 +160,7 @@ def formatOperator(format, formatItems=None, formatToDecrypt=None):
             
         else:
             space += char
-        index += 1 
-            
+        index += 1         
 
     returnData = None 
     if not formatItems == None:
@@ -182,28 +180,37 @@ def formatOperator(format, formatItems=None, formatToDecrypt=None):
                 spaceIndex +=1
                 logic = True 
         
-    elif not formatToDecrypt == None:
-        returnData = dict()
-        decryptedData = [] 
+    elif not formatToDecrypt == None: 
+        formatToDecrypt = formatToDecrypt.replace('\n', '')
+            
+        returnData = {}
+
+        correctFormat = True 
+        for space in formatSpaceList:
+            if not formatToDecrypt.count(space) == formatSpaceList.count(space):
+                correctFormat = False 
+                break 
         
-        index, listIndex, decryptValue, inRange = 0, 0, '', False 
-        for char in formatToDecrypt:
-            
-            if index > itemStartIndex[listIndex] and index < formatItemList[listIndex]:
-                decryptValue += char 
-                inRange = True 
-                
-            elif inRange:
-                listIndex += 1 
-                decryptedData.append(decryptValue)
-                decryptValue = '' 
-                inRange = False 
-  
-            index += 1 
-            
+        if not correctFormat:
+            return None 
+
+        decryptedData = [formatToDecrypt] 
+        for space in formatSpaceList:
+            newDecryptedData = []
+            for item in decryptedData:
+                if item.count(space) > 0:
+
+                    splitItem = item.split(space)
+                    newDecryptedData += splitItem
+
+                elif len(item) > 0:
+                    newDecryptedData.append(item)
+                    
+            decryptedData = newDecryptedData
+        
         for item in formatItemList:
             returnData[item] = decryptedData[formatItemList.index(item)]
-        
+
     else:
         returnData = formatItemList
                

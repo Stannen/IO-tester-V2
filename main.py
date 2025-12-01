@@ -16,6 +16,29 @@ import customtkinter
 from PIL import Image
 import pytesseract #https://www.geeksforgeeks.org/python/introduction-to-python-pytesseract-package/
 
+import logging
+import time 
+import sys
+import importlib
+
+logging.basicConfig(filename='log.log', level=logging.DEBUG,
+        format='%(asctime)s %(levelname)s:%(message)s')
+
+
+def log(msg, level='error'): 
+        levels = ['error', 'info']
+
+        if levels.count(level) != 1:
+            logging.error(f" -- {datetime.now()} -- level: {level} don't exist")
+            return 
+
+        logging.__dict__[level](f' -- {datetime.now()} -- {msg}')
+
+        if level == 'error':
+            while True:
+                time.sleep(2)
+                print(f'Fix before restart Error: {msg}')
+
 
 class Progression():
     def __init__(self):
@@ -28,7 +51,7 @@ class Progression():
 class Schematic():
     def __init__(self):
         self.get_config()
-        self.order_id = self.tkinter(self.config['order_id_request_text'], 'int')
+        self.order_id = 4553 #self.tkinter(self.config['order_id_request_text'], 'int')
 
         self.curr_page = 0
         self.curr_kast = None 
@@ -75,93 +98,94 @@ class Schematic():
     def get_imports(self, progress_path):
         elements_requested = {'order_id':self.order_id}
        
-        for export in ['rack','io','schematic']:        
-            key = 'export_' + export
-            export = self.config[key]
+        for export_id in ['rack','io','schematic']:        
+            config = self.config['export_' + export_id]
            
-            for request in export['elements_to_request']:
+            for request in config['elements_to_request']:
                 if list(elements_requested.keys()).count(request['variable']) == 1:
                     continue
 
                 elements_requested[request['variable']] = self.tkinter(request['text'], request['variable_type'])
         
-            file_list = fc.fileOperator(export['path'], True)
-
+            file_list = fc.fileOperator(config['path'], True)
+            
             for file in file_list:
                 correct_file_selected = True 
 
-                for item in export['file_elements']:
+                for item in config['file_elements']:
                     if file.count(item) == 0:
                         correct_file_selected = False 
                
-                for item in export['file_exclude_elements']:
+                for item in config['file_exclude_elements']:
                     if file.count(item) == 1:
                         correct_file_selected = False 
 
-                for item in export['elements_to_request']:                 
+                for item in config['elements_to_request']:                 
                     item = elements_requested[item['variable']]
                     if file.count(str(item)) == 0:
                         correct_file_selected = False 
 
-                if correct_file_selected:
-                    if export['extension_type'] == '.xlsx':
-                        self.__dict__[key] = pd.read_excel(export['path'] + '/' + file + '.xlsx')
+                if not correct_file_selected:
+                    continue
 
-                    elif export['extension_type'] == '.csv':
-                        self.__dict__[key] = pd.read_csv(export['path'] + '/' + file + '.csv')
+                if export_id == 'schematic':
+                    continue
+                    if not config['extension_type'] == '.pdf':
+                        log('extension_type .pdf is only supported for the schematic')
+                    
+                    doc = fitz.open(config['path'] + '/' + file + '.pdf')
 
-                    elif export['extension_type'] == '.pdf':
-                        doc = fitz.open(export['path'] + '/' + file + '.pdf')
+                    fc.dirOperator(progress_path + '/schematic_jpg')
 
-                        fc.dirOperator(progress_path + '/schematic_jpg')
+                    for i, page in enumerate(doc):
+                        pix = page.get_pixmap()
 
-                        for i, page in enumerate(doc):
-                            pix = page.get_pixmap()
-
-                            if self.page_X_pixels == None or self.page_Y_pixels == None:
-                                rect = page.rect
-                                self.page_X_pixels = rect.width
-                                self.page_Y_pixels = rect.height
-                            
-         
-                            box_page = self.config['box_page_nr']
-  
-                            image_bytes = pix.tobytes("ppm")
-                            image = Image.open(io.BytesIO(image_bytes))
-                            crop_rectangle = (box_page['Y_pos'], box_page['X_pos'], box_page['Y_pos'] + box_page['Y_length'], box_page['X_pos'] + box_page['X_length']) #(left, upper, right, lower)
-                            cropped_im = image.crop(crop_rectangle)
-
-                            cropped_im.show()                               
-                            pagetext = pytesseract.image_to_string(cropped_im)
-
-
-
-                            #=BHS+E3/535
-                            #pix.save(progress_path + '/schematic_jpg/E1_150_' + str(i) +'.jpg')
-
-                   
-                      
-
-                    else:
-                        print("error")
-
-                    print(file)
-            
-            
-
-
-
-
-        #filterd de imports rack opbouw en io lijst. 
-        #convert schema pdf naar jpg bestand(en) 
-        #per jpg een format maken met {kast, schema_pagina_Nr, pdf_pagina_Nr}
-
-
-
-
-
+                        if self.page_X_pixels == None or self.page_Y_pixels == None:
+                            rect = page.rect
+                            self.page_X_pixels = rect.width
+                            self.page_Y_pixels = rect.height
+                        
         
-    
+                        box_page = self.config['box_page_nr']
+
+                        image_bytes = pix.tobytes("ppm")
+                        image = Image.open(io.BytesIO(image_bytes))
+                        crop_rectangle = (box_page['Y_pos'], box_page['X_pos'], box_page['Y_pos'] + box_page['Y_length'], box_page['X_pos'] + box_page['X_length']) #(left, upper, right, lower)
+                        cropped_im = image.crop(crop_rectangle)
+
+                        cropped_im.show()                               
+                        page_nr_text = pytesseract.image_to_string(cropped_im)
+
+                        exclude_jpg = False 
+                        for item in self.config['export_jpg']['pages_to_exclude']:
+                            if page_nr_text.lower().count(item.lower()) > 0:
+                                exclude_jpg = True 
+                            
+                        if exclude_jpg:
+                            continue
+
+                        format_items = fc.formatOperator(self.config['page_nr']['format'], formatToDecrypt=page_nr_text)
+
+                        if format_items is None:
+                            continue
+                        
+                        jpg_name = fc.formatOperator(self.config['export_jpg']['format'], format_items)
+                        pix.save(progress_path + '/schematic_jpg/' + jpg_name +'.jpg')
+
+
+                else:
+                    if not config['extension_type'] == '.xlsx' and not config['extension_type'] == '.csv':
+                        log('extension_type .xlsx or .csv is only supported for the rack or io export')
+
+                    data = pd.__dict__['read_' + 'excel' if config['extension_type'] == '.xlsx' else '.csv'](config['path'] + '/' + file + config['extension_type'])
+
+                    if not len(data.columns) == len(config['columns']):
+                        log(f'The collumns of Export {export_id} and the pre defined columns of export_{export_id} are not of the same length')
+                 
+                    data.columns = config['columns']
+                    self.__dict__['export_'+ export_id] = data
+
+
     def get_page_elements(self):
         #haal van de curr_page alle verwijzingen op naar een beckhoff kaart 
         pass 
@@ -178,6 +202,27 @@ class Schematic():
 class Beckhoff():
     def __init__(self):
         self.get_config()
+        sys.path.append("beckhoff/cards")
+
+        self.cards = []
+        self.supported_cards = []
+        
+        print(fc.fileOperator('beckhoff/cards', True, False))
+
+        for card in fc.fileOperator('beckhoff/cards', True, False):
+            card, extention = card.split('.')
+
+            if not extention == 'py':
+                continue
+            
+            module = importlib.import_module(card)
+            card = getattr(module, card)()
+
+            self.supported_cards += card.supported
+            self.cards.append(card)
+
+        print('beckhoff class opgebouwd')
+        
 
     def get_config(self):
         self.config = fc.yamlOperator('config', 'beckhoff.yaml')      
@@ -189,13 +234,12 @@ class IO_Tester():
         self.beckhoff       = beckhoff_class 
         self.progression    = progression_class
 
-        #file_list = fc.fileOperator('C:/Users/Hacker/OneDrive/Bureaublad/Ethercat I_O tester V2.0/export/schematic', True)
-        #print(file_list)
         self.get_config()
         self.get_progress_id()
+
         self.schematic.get_imports(self.progress_path)
-
-
+        self.filter_exports()
+        
 
         #1. !!!
             #vragen naar de gegevens zoals {orderNr} 
@@ -228,8 +272,17 @@ class IO_Tester():
             info = {'progress_id':self.progress_id, 'order_id':self.schematic.order_id, 'last_updated':datetime.now().strftime('%d/%m/%y')}
             fc.yamlOperator(self.progress_path, 'info.yaml', info)
 
-        
 
+    def filter_exports(self):
+        
+        export_rack = self.schematic.export_rack
+        export_rack = export_rack[export_rack['kaart_type'].isin(self.beckhoff.supported_cards)]
+
+        export_io = self.schematic.export_io
+        export_io = export_io[export_io['kaart_id'].isin(export_rack['kaart_id'])]
+
+        self.schematic.export_rack  = export_rack
+        self.schematic.export_io    = export_io
 
 
 if __name__ == '__main__':
