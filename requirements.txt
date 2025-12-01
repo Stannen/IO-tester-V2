@@ -6,6 +6,7 @@ pip install PyMuPDF
 pip install flask
 pip install waitress
 
+pip install tk
 pip install customtkinter
 pip install pillow
 pip install pytesseract

@@ -5,10 +5,12 @@
 #elements_to_request = standaard wordt orderNr aangevraagt
 #toevoegen mist te gebruiken 
 
+#"C:\Users\Hacker\OneDrive\Bureaublad\IO-tester-V2\export"
+
 order_id_request_text: Enter your order without a V character 
 
 export_rack:
-  path: C:/Users/Hacker/OneDrive/Bureaublad/Ethercat I_O tester V2.0/export/excel
+  path: /mnt/c/Users/Hacker/OneDrive/Bureaublad/IO-tester-V2/export/excel
   elements_to_request:
    - variable: order_id
      text: Enter your order without a V character
@@ -20,7 +22,7 @@ export_rack:
 
 
 export_io:
-  path: C:/Users/Hacker/OneDrive/Bureaublad/Ethercat I_O tester V2.0/export/excel
+  path: /mnt/c/Users/Hacker/OneDrive/Bureaublad/IO-tester-V2/export/excel
   elements_to_request:
    - variable: order_id
      text: Enter your order without a V character
@@ -32,7 +34,7 @@ export_io:
 
 
 export_schematic:
-  path: C:\Users/Hacker/OneDrive/Bureaublad/Ethercat I_O tester V2.0/export/schematic
+  path: /mnt/c/Users/Hacker/OneDrive/Bureaublad/IO-tester-V2/export/schematic
   elements_to_request:
    - variable: order_id
      text: Enter your order without a V character
