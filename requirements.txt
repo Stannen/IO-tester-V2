@@ -1,0 +1,16 @@
+python packages:
+
+pip install pandas
+pip install pyyaml
+pip install PyMuPDF
+pip install flask
+pip install waitress
+
+pip install customtkinter
+pip install pillow
+pip install pytesseract
+
+
+engine:
+
+sudo apt install tesseract-ocr
