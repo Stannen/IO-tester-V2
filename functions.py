@@ -135,79 +135,13 @@ def yamlOperator(path, fileName, data=None):
     else:
         with open(filePath, 'w') as file:
             yaml.dump(data, file)
-
-
-def modelConfigFile(socket):
-    data = dict() 
     
-    data["instrument"] = socket.instrument
-    
-    indicatorArray = [] 
-    instrumentArray = [] 
-
-    for select in socket.indicator.info:
-        subArray = []
-        
-        subArray.append(select.id)
-        subArray.append(select.type)
-        subArray.append(select.value)
-        
-        indicatorArray.append(subArray)
-        
-    for select in socket.instrument.info:
-        subArray = []
-        subArray.append(select.type)
-        subArray.append(select.value)
-        
-        instrumentArray.append(subArray)
-
-    data["indicators"] = indicatorArray
-    data["types"] = instrumentArray 
-    
-
-def create_datetime(bars, index):
-    year  = bars.loc[index, 'year']
-    month = bars.loc[index, 'month']
-    day   = bars.loc[index, 'day']
-    hour  = bars.loc[index, 'hour']
-    minute= bars.loc[index, 'minute']
-    return datetime(int(year), int(month), int(day), int(hour), int(minute))
-
-
-
-
-def drawObject(drawSeries, drawType, tag='', beginBarsAgo=0, endBarsAgo=0, startY=0.0, endY=0.0, color='Red'):
-    draw_columns = ["drawType", "tag", "startBarsAgo", "endBarsAgo", "startY", "endY", "color"]
-   
-    df = pd.DataFrame(data=[[drawType.value, tag, beginBarsAgo, endBarsAgo, startY, endY, color]], columns=draw_columns)
-
-    if len(drawSeries[draw_columns[0]]) == 0:
-        drawSeries = df 
-    else:   
-        drawSeries = pd.concat([drawSeries, df])
-
-    return drawSeries
-
-
-def checkEnum(Enum, enumState):
-    check = False 
-                      
-    if type(enumState) == str:
-        check = Enum.name == enumState
-            
-    elif type(enumState) == int:
-        check = Enum.value == enumState 
-    else: 
-        check = Enum.value == enumState.value
-    return check 
-
 
 def formatOperator(format, formatItems=None, formatToDecrypt=None):
     formatItemList, formatSpaceList = [], []
     itemStartIndex, itemEndIndex, index = [], [], 0 
     item, space, enable = '', '', False 
     
-
     for char in format:
         if char == '%':
             if enable == False:
@@ -226,8 +160,7 @@ def formatOperator(format, formatItems=None, formatToDecrypt=None):
             
         else:
             space += char
-        index += 1 
-            
+        index += 1         
 
     returnData = None 
     if not formatItems == None:
@@ -247,28 +180,37 @@ def formatOperator(format, formatItems=None, formatToDecrypt=None):
                 spaceIndex +=1
                 logic = True 
         
-    elif not formatToDecrypt == None:
-        returnData = dict()
-        decryptedData = [] 
+    elif not formatToDecrypt == None: 
+        formatToDecrypt = formatToDecrypt.replace('\n', '')
+            
+        returnData = {}
+
+        correctFormat = True 
+        for space in formatSpaceList:
+            if not formatToDecrypt.count(space) == formatSpaceList.count(space):
+                correctFormat = False 
+                break 
         
-        index, listIndex, decryptValue, inRange = 0, 0, '', False 
-        for char in formatToDecrypt:
-            
-            if index > itemStartIndex[listIndex] and index < formatItemList[listIndex]:
-                decryptValue += char 
-                inRange = True 
-                
-            elif inRange:
-                listIndex += 1 
-                decryptedData.append(decryptValue)
-                decryptValue = '' 
-                inRange = False 
-  
-            index += 1 
-            
+        if not correctFormat:
+            return None 
+
+        decryptedData = [formatToDecrypt] 
+        for space in formatSpaceList:
+            newDecryptedData = []
+            for item in decryptedData:
+                if item.count(space) > 0:
+
+                    splitItem = item.split(space)
+                    newDecryptedData += splitItem
+
+                elif len(item) > 0:
+                    newDecryptedData.append(item)
+                    
+            decryptedData = newDecryptedData
+        
         for item in formatItemList:
             returnData[item] = decryptedData[formatItemList.index(item)]
-        
+
     else:
         returnData = formatItemList
                
