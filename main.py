@@ -7,7 +7,7 @@ import numpy as np
 
 from datetime import datetime 
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, send_from_directory, request
 from waitress import serve
 
 from tkinter import *
@@ -20,6 +20,9 @@ import logging
 import time 
 import sys
 import importlib
+
+#pip install qrcode
+
 
 logging.basicConfig(filename='log.log', level=logging.DEBUG,
         format='%(asctime)s %(levelname)s:%(message)s')
@@ -206,8 +209,6 @@ class Beckhoff():
 
         self.cards = []
         self.supported_cards = []
-        
-        print(fc.fileOperator('beckhoff/cards', True, False))
 
         for card in fc.fileOperator('beckhoff/cards', True, False):
             card, extention = card.split('.')
@@ -221,18 +222,19 @@ class Beckhoff():
             self.supported_cards += card.supported
             self.cards.append(card)
 
-        print('beckhoff class opgebouwd')
-        
 
     def get_config(self):
         self.config = fc.yamlOperator('config', 'beckhoff.yaml')      
 
 
 class IO_Tester():
-    def __init__(self, schematic_class, beckhoff_class, progression_class):
+    def __init__(self, schematic_class, io_class, progression_class, name):
+        
         self.schematic      = schematic_class 
-        self.beckhoff       = beckhoff_class 
+        self.io             = io_class 
         self.progression    = progression_class
+
+        self.app = Flask(name)
 
         self.get_config()
         self.get_progress_id()
@@ -240,18 +242,18 @@ class IO_Tester():
         self.schematic.get_imports(self.progress_path)
         self.filter_exports()
         
+        self.kast_list = ['E1','E2','E3','E4'] 
+        self.page_list = ['201', '202', '203'] 
+        self.background_jpg = "saved_progress/progress0/schematic_jpg/BHS_E3_56.jpg"  # of relatieve URL
 
-        #1. !!!
-            #vragen naar de gegevens zoals {orderNr} 
-            #controleren of de gegevens aanwezig zijn 
-
-            #opbouwen van de html server 
-            #QR code projecteren om te verbinden tablet 
-            #vragen gegevens op main screen zoals {orderNr}
+        self.routing()
+        self.app.run(debug=True)
+        
 
 
     def get_config(self):
         self.config = fc.yamlOperator('config', 'IOTester.yaml')      
+
 
     def get_progress_id(self):
         dir_list = fc.dirOperator('saved_progress', make=False, returnList=True)
@@ -276,7 +278,7 @@ class IO_Tester():
     def filter_exports(self):
         
         export_rack = self.schematic.export_rack
-        export_rack = export_rack[export_rack['kaart_type'].isin(self.beckhoff.supported_cards)]
+        export_rack = export_rack[export_rack['kaart_type'].isin(self.io.supported_cards)]
 
         export_io = self.schematic.export_io
         export_io = export_io[export_io['kaart_id'].isin(export_rack['kaart_id'])]
@@ -285,8 +287,46 @@ class IO_Tester():
         self.schematic.export_io    = export_io
 
 
+    def routing(self):
+        #home routs 
+        @self.app.route("/")
+        def home_page():
+            progression_status = 'laag'
+            return render_template('home_page.html', progression=(progression_status == "hoog"))
+
+        @self.app.route("/resume")
+        def resume_progression():
+            print("Resuming progression...")
+            
+            return render_template('schematic_page.html', kast_list=self.kast_list, page_list=self.page_list, background_path=self.background_jpg)
+
+        @self.app.route("/restart")
+        def restart_progression():
+            print("Progression restarted!")
+            kast_picker = ['E1','E2','E3','E4'] 
+            return render_template('schematic_page.html', kast_list=self.kast_list, page_list=self.page_list, background_path=self.background_jpg)
+        
+        #schematic routs
+        @self.app.route("/next_page")
+        def next_page():
+            print("next_page")
+            kast_picker = ['E1','E2','E3','E4'] 
+            return render_template('schematic_page.html', kast_list=self.kast_list, page_list=self.page_list, background_path=self.background_jpg)
+        
+        @self.app.route("/previous_page")
+        def previous_page():
+            print("previous_page")
+
+            kast_picker = ['E1','E2','E3','E4'] 
+            return render_template('schematic_page.html', kast_list=self.kast_list, page_list=self.page_list, background_path=self.background_jpg)
+        
+
+        @self.app.route("/saved_progress/progress0/schematic_jpg/<filename>")
+        def schematic_images(filename):
+            return send_from_directory("saved_progress/progress0/schematic_jpg", filename)
+
 if __name__ == '__main__':
-    IO_Tester(Schematic(), Beckhoff(), Progression())    
+    IO_Tester(Schematic(), Beckhoff(), Progression(), __name__)    
 
 
 

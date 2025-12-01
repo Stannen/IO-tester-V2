@@ -1,0 +1,92 @@
+/* static/style.css */
+:root {
+  --bg-blur: 2px;
+  --overlay: rgba(255, 255, 255, 0.75);
+  --text: #1f2937;
+  --primary: #2563eb;
+  --success: #16a34a;
+  --border: #e5e7eb;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+/* Achtergrond: afbeelding voor de hele pagina */
+/*
+.bg-schematic {
+  min-height: 100vh;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+  */
+
+/* Semi-transparante overlay en layout */
+.content-wrap {
+  backdrop-filter: blur(var(--bg-blur));
+  background: var(--overlay);
+  margin: 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.page-header, .page-footer {
+  margin: 16px 24px;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.6);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.toolbar .spacer { flex: 1; }
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+.btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn.success { background: var(--success); color: #fff; border-color: var(--success); }
+.btn:hover { filter: brightness(1.05); }
+
+.controls {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 8px 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.control-label { font-weight: 600; }
+select {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+.schematic-stage {
+  position: relative;
+  min-height: 50vh;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.6);
+}
+.stage-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #374151;
+}
+.hint { background: rgba(255,255,255,0.8); padding: 8px 12px; border-radius: 8px; }

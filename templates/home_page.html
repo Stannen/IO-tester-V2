@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IO Tester - Home</title>
+    <!-- CSS koppelen -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home_page.css') }}">
+</head>
+
+<body>
+    <h1>Welcome to the IO Tester</h1>
+
+    <!-- Resume progression container -->
+    <div id="resume-container">
+        {% if progression %}
+            <form action="{{ url_for('resume_progression') }}" method="get">
+                <button class="btn resume">Resume Progression</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <!-- Restart progression button -->
+    <form action="{{ url_for('restart_progression') }}" method="get">
+        <button class="btn restart">Restart Progression</button>
+    </form>
+
+    <!-- JS koppelen -->
+    <script src="{{ url_for('static', filename='js/home_page.js') }}"></script>
+</body>
+</html>
+

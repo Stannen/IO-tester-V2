@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Schematic Page — IO Tester</title>
+  <!-- Koppel externe styles en scripts -->
+  <link rel="stylesheet" href="static/style.css">
+  <script defer src="static/script.js"></script>
+</head>
+
+<!--class="bg-schematic"-->>
+<style>
+  .bg-schematic {
+  min-height: 100vh;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-image: url('{{ background_path }}');
+  }
+</style>
+
+<body class="bg-schematic">
+  <header class="page-header">
+    <h1>Schematic Page</h1>
+  </header>
+
+  <main class="content-wrap">
+    <!-- Toolbar met knoppen -->
+    <nav class="toolbar" aria-label="Schematic actions">
+      <button id="btn-link" class="btn primary" type="button">Link</button>
+      <button id="btn-commit" class="btn success" type="button">Commit</button>
+      <div class="spacer"></div>
+      <button id="btn-prev" class="btn" type="button">Previous page</button>
+      <button id="btn-next" class="btn" type="button">Next page</button>
+    </nav>
+
+    <!-- Controls: list pickers -->
+    <!--section class="controls" aria-label="Pagina instellingen"-->
+      <label for="kast-type" class="control-label">Kast type</label>
+      <select id="kast-type" name="kast_type">
+        <option value="" selected disabled>Kies type…</option>
+        {% for kt in kast_list %}
+            <option value="{{ kt }}">{{ kt|capitalize }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="pagina-nr" class="control-label">Pagina nr</label>
+      <select id="pagina-nr" name="pagina_nr">
+        <option value="" selected disabled>Kies pagina…</option>
+        {% for kt in page_list %}
+            <option value="{{ kt }}">{{ kt|capitalize }}</option>
+        {% endfor %}
+        <!-- Voeg indien nodig meer pagina’s toe -->
+      </select>
+    <!--/section-->
+
+    <!-- Canvas / schematic placeholder -->
+    <section class="schematic-stage" aria-label="Schematic weergave">
+      <!-- Plaats hier je SVG/canvas of dynamische inhoud -->
+      <div class="stage-overlay">
+        <p class="hint">Schematic achtergrond zichtbaar. Selecteer kast type en pagina, of gebruik de knoppen.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="page-footer">
+    <small>&copy; 2025 IO Tester</small>
+  </footer>
+</body>
+</html>

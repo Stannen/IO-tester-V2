@@ -1,0 +1,29 @@
+home_page 
+    button
+        resume progression 
+        restart progression 
+
+
+schematic_page 
+    button 
+        link 
+        commit
+        next page 
+        prev page 
+
+    list pickers 
+        kast 
+        pagina 
+
+finish page 
+
+
+        #1. !!!
+            #vragen naar de gegevens zoals {orderNr} 
+            #controleren of de gegevens aanwezig zijn 
+
+            #opbouwen van de html server 
+            #QR code projecteren om te verbinden tablet 
+            #vragen gegevens op main screen zoals {orderNr}
+
+
