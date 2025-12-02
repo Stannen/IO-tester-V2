@@ -27,3 +27,40 @@ finish page
             #vragen gegevens op main screen zoals {orderNr}
 
 
+
+
+
+export_rack = self.sch.export_rack
+        export_rack = export_rack[export_rack['kaart_type'].isin(self.io.supported_cards)]
+
+        export_io = self.sch.export_io
+        export_io = export_io[export_io['kaart_id'].isin(export_rack['kaart_id'])]
+
+        self.sch.export_rack  = export_rack
+        self.sch.export_io    = export_io
+        self.sch.kast_list    = self.export_rack['kast_nr'].unique().tolist()
+
+
+
+
+// static/script.js
+const $ = (sel) => document.querySelector(sel);
+
+function notify(msg) {
+  // Vervang dit met fetch() naar je backend routes (link/commit/next/prev)
+  console.log(msg);
+  alert(msg);
+}
+
+$("#btn-link")?.addEventListener("click", () => notify("Link action triggered"));
+$("#btn-commit")?.addEventListener("click", () => notify("Commit action triggered"));
+$("#btn-prev")?.addEventListener("click", () => notify("Previous page"));
+$("#btn-next")?.addEventListener("click", () => notify("Next page"));
+
+$("#kast-type")?.addEventListener("change", (e) => {
+  notify(`Kast type: ${e.target.value}`);
+});
+
+$("#pagina-nr")?.addEventListener("change", (e) => {
+  notify(`Pagina nr: ${e.target.value}`);
+});
