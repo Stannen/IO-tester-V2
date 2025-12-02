@@ -1,21 +1,16 @@
-// static/script.js
-const $ = (sel) => document.querySelector(sel);
-
-function notify(msg) {
-  // Vervang dit met fetch() naar je backend routes (link/commit/next/prev)
-  console.log(msg);
-  alert(msg);
+function updateStatus() {
+  fetch("/dynamic_update")
+    .then(res => res.json())
+    .then(data => {
+      data.lamps.forEach(lamp => {
+        document.getElementById(lamp.id).style.backgroundColor = lamp.color;
+      });
+      data.texts.forEach(txt => {
+        document.getElementById(txt.id).textContent = txt.value;
+      });
+    });
 }
 
-$("#btn-link")?.addEventListener("click", () => notify("Link action triggered"));
-$("#btn-commit")?.addEventListener("click", () => notify("Commit action triggered"));
-$("#btn-prev")?.addEventListener("click", () => notify("Previous page"));
-$("#btn-next")?.addEventListener("click", () => notify("Next page"));
-
-$("#kast-type")?.addEventListener("change", (e) => {
-  notify(`Kast type: ${e.target.value}`);
-});
-
-$("#pagina-nr")?.addEventListener("change", (e) => {
-  notify(`Pagina nr: ${e.target.value}`);
-});
+// elke 2 seconden status ophalen
+setInterval(updateStatus, 2000);
+updateStatus();

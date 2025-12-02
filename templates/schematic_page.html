@@ -4,41 +4,31 @@
   <meta charset="UTF-8">
   <title>Schematic Page — IO Tester</title>
   <!-- Koppel externe styles en scripts -->
-  <link rel="stylesheet" href="static/style.css">
-  <script defer src="static/script.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/schematic_page.css') }}">
+  <script src="{{ url_for('static', filename='js/schematic_page.js') }}"></script>
 </head>
 
-<!--class="bg-schematic"-->>
-<style>
-  .bg-schematic {
-  min-height: 100vh;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-image: url('{{ background_path }}');
-  }
-</style>
 
 <body class="bg-schematic">
   <header class="page-header">
     <h1>Schematic Page</h1>
   </header>
 
+
   <main class="content-wrap">
     <!-- Toolbar met knoppen -->
     <nav class="toolbar" aria-label="Schematic actions">
-      <button id="btn-link" class="btn primary" type="button">Link</button>
-      <button id="btn-commit" class="btn success" type="button">Commit</button>
+      <button id="btn-link" class="btn primary" type="button" onclick="window.location.href='{{ url_for('link') }}'">Link</button>
+      <button id="btn-commit" class="btn success" type="button" onclick="window.location.href='{{ url_for('save_progression') }}'">Save progression</button>
       <div class="spacer"></div>
-      <button id="btn-prev" class="btn" type="button">Previous page</button>
-      <button id="btn-next" class="btn" type="button">Next page</button>
+      <button id="btn-prev" class="btn" type="button" onclick="window.location.href='{{ url_for('prev_page') }}'">Previous page</button>
+      <button id="btn-next" class="btn" type="button" onclick="window.location.href='{{ url_for('next_page') }}'">Next page</button>
     </nav>
 
     <!-- Controls: list pickers -->
-    <!--section class="controls" aria-label="Pagina instellingen"-->
       <label for="kast-type" class="control-label">Kast type</label>
       <select id="kast-type" name="kast_type">
-        <option value="" selected disabled>Kies type…</option>
+        <option value="" selected disabled>{{curr_kast}}</option>
         {% for kt in kast_list %}
             <option value="{{ kt }}">{{ kt|capitalize }}</option>
         {% endfor %}
@@ -46,7 +36,7 @@
 
       <label for="pagina-nr" class="control-label">Pagina nr</label>
       <select id="pagina-nr" name="pagina_nr">
-        <option value="" selected disabled>Kies pagina…</option>
+        <option value="" selected disabled>{{curr_page}}</option>
         {% for kt in page_list %}
             <option value="{{ kt }}">{{ kt|capitalize }}</option>
         {% endfor %}
@@ -56,12 +46,51 @@
 
     <!-- Canvas / schematic placeholder -->
     <section class="schematic-stage" aria-label="Schematic weergave">
-      <!-- Plaats hier je SVG/canvas of dynamische inhoud -->
-      <div class="stage-overlay">
-        <p class="hint">Schematic achtergrond zichtbaar. Selecteer kast type en pagina, of gebruik de knoppen.</p>
+
+      <!-- Achtergrond -->
+      <img src="{{ url_for ('schematic_images', filename=curr_background) }}" alt="Schematic achtergrond" class="background"> <!-- background-image: url('{{ curr_background }}');-->>
+
+      <div class="canvas">
+        <!-- Buttons -->
+        {% for btn in button_elements %}
+          <button
+            style="position:absolute; left:{{ btn.x }}px; top:{{ btn.y }}px;"
+            onclick="window.location.href='{{ url_for(btn.route, name=btn.param) }}'">
+            {{ btn.label }}
+          </button>
+        {% endfor %}
+
+        <!-- Lamps -->
+        {% for lamp in lamp_elements %}
+          <div
+            id="{{ lamp.id }}"
+            style="position:absolute; left:{{ lamp.x }}px; top:{{ lamp.y }}px;
+                  width:40px; height:40px; border-radius:50%;
+                  background-color:{{ lamp.color }};">
+            {{ lamp.label }}
+          </div>
+        {% endfor %}
+
+        <!-- Texts -->
+        {% for txt in text_elements %}
+          <p id="{{ txt.id }}" style="position:absolute; left:{{ txt.x }}px; top:{{ txt.y }}px;">
+            {{ txt.label }}
+          </p>
+        {% endfor %}
+
+        <!-- Inputs -->
+        {% for inp in input_elements %}
+          <form action="{{ url_for('dynamic_input', name=inp.name) }}" method="post"
+                style="position:absolute; left:{{ inp.x }}px; top:{{ inp.y }}px;">
+            <input type="text" name="{{ inp.name }}" placeholder="{{ inp.label }}">
+          </form>
+        {% endfor %}
       </div>
+
     </section>
   </main>
+
+  
 
   <footer class="page-footer">
     <small>&copy; 2025 IO Tester</small>
