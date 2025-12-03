@@ -1,10 +1,4 @@
 
-#variable_type = {int, str} supported 
-#extension_type = {.xlsx, .csv} supported
-
-#elements_to_request = standaard wordt orderNr aangevraagt
-
-
 order_id_request_text: Enter your order without a V character 
 
 export_rack:
@@ -49,6 +43,25 @@ export_schematic:
 
 #X = horizontaal
 #Y = verticaal 
+
+elements:
+  lamp:
+      X_length: 50 
+      Y_length: 50
+  button:
+      X_length: 50 
+      Y_length: 50
+  text:
+      X_length: 50 
+      Y_length: 50
+  input:
+      X_length: 50 
+      Y_length: 50
+
+page_section:
+  Y_pos: 100 
+  X_pos: [9, 24, 24, 24, 24, 24, 24, 24, 24, 9]
+  element_pos: 33 
 
 page_nr:
     box:

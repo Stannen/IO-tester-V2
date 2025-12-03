@@ -82,27 +82,25 @@ select {
   border: 1px solid #ccc;
   overflow: hidden;
   z-index: 2;
-  width: 1200px;
-  height: 800px;
 } 
 
 .background {
-  position: absolute;
+  position: static; /*absolute*/
   top: 0;
   left: 0;
-  width: 1200px;
-  height: 800px;
-  object-fit: none;
-  z-index: 2; /* achtergrondlaag */
+  object-fit: contain;
+  z-index: 2; 
+  width: 100%;
+  height: 100%;
 }
 
 .canvas {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 1; /* bovenop achtergrond */
-  width: 1200px;
-  height: 800px;
+  z-index: 1; 
+  width: 100%;
+  height: 100%;
 }
 
 .stage-overlay {

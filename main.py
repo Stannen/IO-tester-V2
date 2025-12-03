@@ -64,17 +64,25 @@ class Schematic():
         self.curr_background = None 
         self.curr_kast = None 
         self.curr_eiland = None 
+        self.curr_machine_type = None 
+
         self.page_index = 0 
 
         self.curr_rack = None 
         self.curr_io = None 
 
         self.next_button = True 
-        self.prev_button = True 
+        self.prev_button = True       
 
-        self.page_X_pixels = 1200 #None #horizontaal
-        self.page_Y_pixels = 800 #None #verticaal 
+        self.jpg_X_pixels = 1197.2099 #None #horizontaal
+        self.jpg_Y_pixels = 882.567 #None #verticaal 
+        self.zoom_ratio = 1
 
+        self.sections = [] 
+
+        self.page_X_pixels = None  #None #horizontaal
+        self.page_Y_pixels = None  #None #verticaal 
+    
         self.page_min_range = None 
         self.page_max_range = None 
 
@@ -88,6 +96,7 @@ class Schematic():
         self.button_elements = []
         self.text_elements = []
         self.input_elements = []
+        self.alignment_elements = [] 
 
     def to_percent(self, x, y):
         return round(x / self.page_X_pixels * 100, 2), round(y / self.page_Y_pixels * 100, 2)
@@ -117,8 +126,6 @@ class Schematic():
             return user_input
 
     
-    def dataframe_filter(df, ):
-        pass
     def get_imports(self, progress_path):
         elements_requested = {'order_id':self.order_id}
        
@@ -216,19 +223,32 @@ class Schematic():
         pattern = r'=(?P<machine_type>[^+]+)\+(?P<kast_nr>[^/]+)/(?P<pagina_nr>\d+)(?:\.(?P<pagina_section>\d+))?'
 
         self.export_io.loc[:, ['machine_type', 'kast_nr', 'pagina_nr', 'pagina_section']] = (self.export_io['pagina_nr'].str.extract(pattern))
+        self.export_io['pagina_nr'] = self.export_io['pagina_nr'].astype('int64')
+        self.export_io['pagina_section'] = self.export_io['pagina_section'].astype('int64')
+
         self.kast_list = self.export_rack['kast_nr'].unique().tolist()
+
+        x_pos = self.config['page_section']['X_pos']
+        max_steps = sum(x_pos)
+        pix_step = self.jpg_X_pixels / max_steps
+        pix_count = 0 
+        
+        for i in range(len(x_pos)):
+            pix_count += x_pos[i] * pix_step
+
+            pix_begin = 0 if i == 0 else self.sections[-1]['end']
+            pix_end = pix_count 
+            self.sections.append({'begin':pix_begin, 'end':pix_end})
+
 
     def set_page_elements(self):
         self.lamp_elements.clear()
         self.button_elements.clear()
         self.text_elements.clear()
         self.input_elements.clear()
-        print('set_page_elements')
 
         df = self.curr_io[self.curr_io['pagina_nr'].isin([self.curr_page])]
-
-        defauld_x = [100, 200, 300, 400, 500, 600, 700, 800] 
-        defauld_y = 500
+        elemens_added = [0] * len(self.sections)
 
         for row in df.itertuples():
             card = self.t.io.configuration[self.curr_eiland][row.kaart_id]
@@ -236,30 +256,38 @@ class Schematic():
             if card.is_defauld == True:
                 continue
             
-            x = defauld_x[int(row.pagina_section)]
-            y = defauld_y     
-            _id = card.element_type + str(len(self.__dict__[card.element_type +'_elements']))
-    
+            section_index = row.pagina_section
+            section_separations = (df['pagina_section'] == section_index).sum() + 1 
+            section = self.sections[section_index]
+            elemens_added[section_index] += 1 
+
+            x = (section['begin'] + (((section['end'] - section['begin']) / section_separations) * elemens_added[section_index])) * self.zoom_ratio
+            y = self.config['page_section']['Y_pos'] * self.zoom_ratio
+
+            _id = card.element_type + str(len(self.__dict__[card.element_type +'_elements']) ) 
 
             if card.element_type == 'lamp':
-                self.lamp_elements.append({"id": _id, "label": "Lamp1", "x": x, "y": y, "color": "red"})
-                print('lamp added')
+                self.lamp_elements.append({"id": _id, "label": "Lamp1 "+ str(section_index), "x": x, "y": y, "color": "red"})
+
             elif card.element_type == 'button':
-                self.button_elements.append({"label": _id, "x": x, "y": y, "route": "dynamic_button", "param": "btn1"})
-                print('button added')
+                self.button_elements.append({"label": str(section_index), "x": x, "y": y, "param": "btn1"}) 
 
             elif card.element_type == 'text':
                 self.text_elements.append({"id": _id, "label": "Status: OK", "x": x, "y": y})
+
             elif card.element_type == 'input':
-                self.input_elements.append({"label": _id, "x": x, "y": y, "route":"dynamic_input", "name": "username"})
+                self.input_elements.append({"label": _id, "x": x, "y": y, "name": "username"}) 
             
- 
 
-    def set_page(self, page_correction= None, kast= None, eiland= None):
-        render_columns = ['curr_background','curr_kast','curr_eiland','curr_page','page_min_range','page_max_range','kast_list','page_list','lamp_elements','button_elements','text_elements','input_elements'] 
 
-        if self.curr_kast is None or not kast is None:
-            self.curr_kast = self.kast_list[0] #moet ik nog aanpassen als kast niet none is 
+    def set_page(self, set_new_kast= False, eiland= None):
+        render_columns = ['curr_background', 'page_X_pixels', 'page_Y_pixels','curr_kast','curr_eiland','curr_page','kast_list','page_list','lamp_elements','next_button','prev_button','button_elements','text_elements','input_elements'] 
+        
+        if self.curr_kast == None:
+                self.curr_kast = self.kast_list[0]
+                set_new_kast = True  
+
+        if set_new_kast:
             self.curr_eiland = 0
 
             self.curr_rack = self.export_rack[self.export_rack['kast_nr'].isin([self.curr_kast])]
@@ -269,14 +297,18 @@ class Schematic():
             self.curr_io = self.curr_io.reset_index(drop=True)
 
             self.page_list = self.curr_io['pagina_nr'].unique().tolist()
+            self.page_list.sort()
+
+            self.curr_machine_type = self.curr_rack.at[0, 'machine_type']
+
             self.page_index = 0 
+            self.prev_button = False 
+        
             self.page_min_range = 0  
             self.page_max_range = len(self.page_list)
 
             self.t.io.get_configuration(self.curr_rack)            
 
-        if not page_correction is None:
-            self.page_index += page_correction
 
         if not eiland is None:
             self.curr_eiland = eiland
@@ -284,19 +316,16 @@ class Schematic():
         self.curr_page = self.page_list[self.page_index]
         self.set_page_elements()
 
-        df = self.curr_io.iloc[self.page_index]
-        format_elements = {'machine_type': df['machine_type'], 'kast_nr': df['kast_nr'], 'pagina_nr': df['pagina_nr']}
-        self.curr_background = fc.formatOperator(self.config['export_schematic']['jpg_format'], format_elements) + ".jpg"  # "saved_progress/progress0/schematic_jpg/" +   #%machine_type%_%kast_nr%_%pagina_nr%'
-        
+        format_elements = {'machine_type': self.curr_machine_type, 'kast_nr': self.curr_kast, 'pagina_nr': self.page_list[self.page_index]}
+        self.curr_background = fc.formatOperator(self.config['export_schematic']['jpg_format'], format_elements) + ".jpg"  
 
         render = {}
         for key in render_columns:
             if not self.__dict__.get(key) is None:
                 render[key] = self.__dict__[key]
             else:
-                log('Missing key in set_page')
+                log('Missing key in set_page key: ', key)
 
-        
         return render 
 
 
@@ -392,41 +421,39 @@ class IO_Tester():
 
 
     def routing(self):
-
         @self.app.route("/")
         def home_page():
             progression_status = 'laag'
             return render_template('home_page.html', progression=(progression_status == "hoog"))
+        
+        @self.app.route("/progression/<name>")
+        def progression(name):
+            if name == 'save':
+                return render_template('home_page.html') 
 
-        @self.app.route("/resume")
-        def resume_progression():
-            render = self.sch.set_page()
-            return render_template('schematic_page.html', **render) 
-
-        @self.app.route("/restart")
-        def restart_progression():
             render = self.sch.set_page()
             return render_template('schematic_page.html', **render) 
         
-        @self.app.route("/next_page")
-        def next_page():
-            render = self.sch.set_page(page_correction= 1)
+        @self.app.route("/page_correction/<correction>")
+        def page_correction(correction):
+            self.sch.page_index += int(correction)  
+            self.sch.next_button = True if self.sch.page_index < (len(self.sch.page_list) -1) else False  
+            self.sch.prev_button = True if self.sch.page_index > 0 else False      
+    
+            render = self.sch.set_page() #page_correction=int(correction)
             return render_template('schematic_page.html', **render) 
         
-        @self.app.route("/prev_page")
-        def prev_page():
-            print('prev_page')
-            render = self.sch.set_page(page_correction= -1)
+        @self.app.route("/zoom/<ratio>")
+        def zoom(ratio):
+            self.sch.zoom_ratio += float(ratio)
+            self.sch.page_X_pixels = self.sch.jpg_X_pixels * self.sch.zoom_ratio
+            self.sch.page_Y_pixels = self.sch.jpg_Y_pixels * self.sch.zoom_ratio
+            render = self.sch.set_page()
             return render_template('schematic_page.html', **render) 
         
         @self.app.route("/link")
         def link():
             render = self.sch.set_page()
-            return render_template('schematic_page.html', **render)
-        
-        @self.app.route("/save_progression")
-        def save_progression():
-            render = self.sch.set_page(page_correction= -1)
             return render_template('schematic_page.html', **render)
         
         @self.app.route("/saved_progress/progress0/schematic_jpg/<filename>")
@@ -453,6 +480,21 @@ class IO_Tester():
                 {"id": "text0", "value": "System OK"}
             ]
             return jsonify({"lamps": lamps, "texts": texts})
+        
+        @self.app.route("/list_picker/<name>")
+        def list_picker(name):
+            render, new_item = None, request.args.get("value")
+    
+            if name == 'kast':
+                self.sch.curr_kast = new_item
+                print('kast: ', self.sch.curr_kast)
+                render = self.sch.set_page(set_new_kast=True)
+
+            elif name == 'page':
+                self.sch.page_index = self.sch.page_list.index(int(new_item))
+                render = self.sch.set_page()
+    
+            return render_template('schematic_page.html', **render)
         
 if __name__ == '__main__':
     IO_Tester(__name__)    
