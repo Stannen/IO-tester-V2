@@ -19,43 +19,52 @@
     <!-- Toolbar met knoppen -->
     <nav class="toolbar" aria-label="Schematic actions">
       <button id="btn-link" class="btn primary" type="button" onclick="window.location.href='{{ url_for('link') }}'">Link</button>
-      <button id="btn-commit" class="btn success" type="button" onclick="window.location.href='{{ url_for('save_progression') }}'">Save progression</button>
-      <div class="spacer"></div>
-      <button id="btn-prev" class="btn" type="button" onclick="window.location.href='{{ url_for('prev_page') }}'">Previous page</button>
-      <button id="btn-next" class="btn" type="button" onclick="window.location.href='{{ url_for('next_page') }}'">Next page</button>
-    </nav>
+      <button id="btn-commit" class="btn success" type="button" onclick="window.location.href='{{ url_for('progression', name='save') }}'">Save progression</button>
 
-    <!-- Controls: list pickers -->
-      <label for="kast-type" class="control-label">Kast type</label>
-      <select id="kast-type" name="kast_type">
-        <option value="" selected disabled>{{curr_kast}}</option>
-        {% for kt in kast_list %}
-            <option value="{{ kt }}">{{ kt|capitalize }}</option>
-        {% endfor %}
-      </select>
+      <button id="zoom+" class="btn" type="button" onclick="window.location.href='{{ url_for('zoom', ratio=0.1) }}'">Zoom +</button>
+      <button id="zoom-" class="btn" type="button" onclick="window.location.href='{{ url_for('zoom', ratio=-0.1) }}'">Zoom -</button>
+
+
+      <label for="kast-type" class="control-label">Kast type</label-->
+        <select id="kast-type" name="kast_type" onchange="window.location.href='{{ url_for('list_picker', name='kast') }}?value=' + this.value">                                     <!--id="kast-type"  onchange="window.location.href='{{ url_for('list_picker', name='kast') }}'"-->
+          <option value="{{ curr_kast }}">{{ curr_kast }}</option>
+          {% for kt in kast_list %}
+              <option value="{{ kt }}">{{ kt|capitalize }}</option>
+          {% endfor %}
+        </select>
 
       <label for="pagina-nr" class="control-label">Pagina nr</label>
-      <select id="pagina-nr" name="pagina_nr">
-        <option value="" selected disabled>{{curr_page}}</option>
-        {% for kt in page_list %}
-            <option value="{{ kt }}">{{ kt|capitalize }}</option>
-        {% endfor %}
-        <!-- Voeg indien nodig meer pagina’s toe -->
-      </select>
-    <!--/section-->
+        <select id="pagina-nr" name="pagina-nr" onchange="window.location.href='{{ url_for('list_picker', name='page') }}?value=' + this.value">
+          <option value="{{ curr_page }}">{{ curr_page }}</option>
+          {% for kt in page_list %}
+              <option value="{{ kt }}">{{ kt|capitalize }}</option>
+          {% endfor %}
+        </select>
+    </nav>
+
+    {% if next_button %}
+      <button id="next" class="btn" type="button" onclick="window.location.href='{{ url_for('page_correction', correction=1) }}'">Next page</button>
+    {% endif %}
+
+    {% if prev_button %}
+      <button id="prev" class="btn" type="button" onclick="window.location.href='{{ url_for('page_correction', correction=-1) }}'">Previous page</button>
+    {% endif %}
+
+    <div class="spacer"></div>
+
 
     <!-- Canvas / schematic placeholder -->
-    <section class="schematic-stage" aria-label="Schematic weergave">
+    <section class="schematic-stage" aria-label="Schematic weergave" style="width: {{page_X_pixels}}px; height: {{page_Y_pixels}}px;">
 
       <!-- Achtergrond -->
-      <img src="{{ url_for ('schematic_images', filename=curr_background) }}" alt="Schematic achtergrond" class="background"> <!-- background-image: url('{{ curr_background }}');-->>
+      <img src="{{ url_for ('schematic_images', filename=curr_background) }}" alt="Schematic achtergrond" class="background">  <!--style="width: {{page_X_pixels}}px; height: {{page_Y_pixels}}px;"-->>
 
-      <div class="canvas">
+      <div class="canvas"> <!--style="width: {{page_X_pixels}}px; height: {{page_Y_pixels}}px;"-->>
         <!-- Buttons -->
         {% for btn in button_elements %}
           <button
             style="position:absolute; left:{{ btn.x }}px; top:{{ btn.y }}px;"
-            onclick="window.location.href='{{ url_for(btn.route, name=btn.param) }}'">
+            onclick="window.location.href='{{ url_for('dynamic_button', name=btn.param) }}'">
             {{ btn.label }}
           </button>
         {% endfor %}
@@ -91,7 +100,6 @@
   </main>
 
   
-
   <footer class="page-footer">
     <small>&copy; 2025 IO Tester</small>
   </footer>

@@ -13,16 +13,22 @@
     <!-- Resume progression container -->
     <div id="resume-container">
         {% if progression %}
-            <form action="{{ url_for('resume_progression') }}" method="get">
-                <button class="btn resume">Resume Progression</button>
-            </form>
+          <button
+            class="btn resume"
+            onclick="window.location.href='{{ url_for('progression', name='resume') }}'">Resume Progression           
+          </button>
         {% endif %}
     </div>
-
     <!-- Restart progression button -->
-    <form action="{{ url_for('restart_progression') }}" method="get">
+    <button
+        class="btn restart"
+          onclick="window.location.href='{{ url_for('progression', name='restart') }}'">Restart Progression           
+        </button>
+
+    
+    <!--form action="{{ url_for('progression', name=restart) }}" method="get">
         <button class="btn restart">Restart Progression</button>
-    </form>
+    </form-->
 
     <!-- JS koppelen -->
     <script src="{{ url_for('static', filename='js/home_page.js') }}"></script>
