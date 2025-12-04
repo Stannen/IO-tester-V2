@@ -1,24 +1,31 @@
 #!/bin/bash
-# build.sh - Maak een standalone distributie met PyInstaller en extra folders
+set -e
 
-set -e  # stop bij fouten
-
-# Configuratie
 ENTRY="main.py"
 APPNAME="mijn_app"
-#CONFIG="default_config.yaml"
-DIST_DIR="release"   # uiteindelijke distributiemap
-EXTRA_DIRS=("saved_progress" "config" "export")
-TESSERACT_BIN="/usr/bin/tesseract"        # pad naar tesseract binary in WSL
-TESSDATA_DIR="/usr/share/tesseract-ocr/4.00/tessdata"  # taalmodellen
+DIST_DIR="release"
+
+# Lijsten met folders en bestanden die je wilt bundelen
+EXTRA_DIRS=("defauld/config" "defauld/export" "defauld/saved_progress")
+ADD_DATA_ITEMS=("defauld:defauld")
+
+# Optioneel: tesseract binaries en modellen
+TESSERACT_BIN="/usr/bin/tesseract"
+TESSDATA_DIR="/usr/share/tesseract-ocr/4.00/tessdata"
 
 echo ">>> Opruimen oude build..."
 rm -rf build dist __pycache__ *.spec "$DIST_DIR"
 
+# Bouw de --add-data argumenten dynamisch
+ADD_DATA_ARGS=""
+for item in "${ADD_DATA_ITEMS[@]}"; do
+    ADD_DATA_ARGS="$ADD_DATA_ARGS --add-data $item"
+done
+
 echo ">>> Bouwen met PyInstaller..."
-python3 -m PyInstaller --onefile \
+eval python3 -m PyInstaller --onefile \
     --name "$APPNAME" \
-    --add-data "$CONFIG:." \
+    $ADD_DATA_ARGS \
     "$ENTRY"
 
 echo ">>> Aanmaken distributiemap $DIST_DIR..."
@@ -27,7 +34,7 @@ mkdir -p "$DIST_DIR"
 echo ">>> Kopiëren executable..."
 cp "dist/$APPNAME" "$DIST_DIR/"
 
-echo ">>> Kopiëren extra folders..."
+echo ">>> Kopiëren extra folders (inhoud)..."
 for d in "${EXTRA_DIRS[@]}"; do
     if [ -d "$d" ]; then
         cp -r "$d" "$DIST_DIR/"

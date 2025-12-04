@@ -52,7 +52,7 @@ class Progression():
         self.get_config()
 
     def get_config(self):
-        self.config = fc.yamlOperator('config', 'progression.yaml')      
+        self.config = fc.yamlOperator('defauld/config', 'progression.yaml')      
 
 
 class Schematic():
@@ -103,7 +103,7 @@ class Schematic():
         return round(x / self.page_X_pixels * 100, 2), round(y / self.page_Y_pixels * 100, 2)
 
     def get_config(self):
-        self.config = fc.yamlOperator('config', 'schematic.yaml')      
+        self.config = fc.yamlOperator('defauld/config', 'schematic.yaml')      
     
     def tkinter (self, text='', variable_type='str'):
         error = False 
@@ -356,7 +356,7 @@ class Beckhoff():
 
 
     def get_config(self):
-        self.config = fc.yamlOperator('config', 'beckhoff.yaml')      
+        self.config = fc.yamlOperator('defauld/config', 'beckhoff.yaml')      
 
     def get_configuration(self, curr_rack):
         self.configuration.clear()

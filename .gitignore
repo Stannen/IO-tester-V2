@@ -25,7 +25,6 @@ env/
 # =========================================
 defauld/saved_progress/
 defauld/export/
-config/
-!defauld/config/
+
 
 
