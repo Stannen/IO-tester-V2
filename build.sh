@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+
 ENTRY="main.py"
 APPNAME="mijn_app"
 DIST_DIR="release"
