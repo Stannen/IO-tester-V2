@@ -22,8 +22,9 @@ import sys
 import importlib
 from copy import deepcopy
 
-#pip install qrcode
-#Ctrl+Shift+P
+import subprocess
+import pysoem
+import struct
 
 
 logging.basicConfig(filename='log.log', level=logging.DEBUG,
@@ -335,6 +336,8 @@ class Beckhoff():
         self.get_config()
         sys.path.append("beckhoff/cards")
 
+        self.master = pysoem.Master()
+
         self.cards = []
         self.supported_cards = []
         self.configuration = [] 
@@ -377,6 +380,49 @@ class Beckhoff():
                     def __init__(self):
                         self.is_defauld = True 
                 self.configuration[index][row.kaart_id] = NotSupported()
+    
+    def get_adapters(self, busid=None, search_term="Ethernet"):
+        """
+        Attach een USB device aan WSL via usbipd.
+        - busid: direct het busid opgeven (bijv. '2-3')
+        - search_term: zoekterm om automatisch busid te vinden
+        """
+        try:
+            
+            # Zoek automatisch naar het busid via usbipd list
+            cmd_list = [
+                "powershell.exe",
+                "-Command",
+                "usbipd list | Select-String '{}'".format(search_term)    
+            ]
+
+            result = subprocess.run(cmd_list, capture_output=True, text=True)
+
+            if result.returncode != 0 or not result.stdout.strip():
+                print("Geen USB device gevonden met zoekterm:", search_term)
+                return False
+            
+            # Eerste kolom is het busid
+            busid = result.stdout.strip().split()[0]
+
+            # Attach uitvoeren
+            cmd_attach = [
+                "powershell.exe",
+                "-Command",
+                f"usbipd bind --busid {busid}"
+            ]#f"usbipd attach --wsl --busid {busid}"
+            
+            result = subprocess.run(cmd_attach, capture_output=True, text=True)
+            if result.returncode == 0:
+                print(f"USB device {busid} gekoppeld aan WSL.")
+                return True
+            else:
+                print("Fout bij koppelen:", result.stderr)
+                return False
+
+        except Exception as e:
+            print("Error:", e)
+            return False
 
 
 class IO_Tester():
@@ -388,10 +434,13 @@ class IO_Tester():
         self.app    = Flask(name)
 
         self.get_config()
-        self.get_progress_id()
 
+        #self.io.get_adapters(search_term="Realtek USB GbE Family Controller #3")
+         #--disable exports--
+        self.get_progress_id()
         self.sch.get_imports(self.progress_path)
 
+        #--disable server--
         self.routing()
         self.app.run(debug=True)
         
