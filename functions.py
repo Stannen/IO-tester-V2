@@ -1,9 +1,11 @@
+import sys
 from datetime import datetime
 import os
 import pandas as pd
 import numpy as np 
 import csv 
 import yaml
+import logging
 
 def dirOperator(path, make=True, returnList=False):
     ''' make=False (return True if path is correct else False) 
@@ -215,3 +217,16 @@ def formatOperator(format, formatItems=None, formatToDecrypt=None):
         returnData = formatItemList
                
     return returnData
+
+def check_folders(base_path, system_folders, found_msg='Bestand gevonden:', not_found_msg='Bestand niet gevonden:'):
+    all_ok = True
+    for folder, files in system_folders.items():
+        folder_path = os.path.join(base_path, folder)
+        for f in files:
+            file_path = os.path.join(folder_path, f)
+            if os.path.exists(file_path):
+                logging.info(f"{found_msg} {file_path}")
+            else:
+                logging.warning(f"{not_found_msg} {file_path}")
+                all_ok = False
+    return all_ok

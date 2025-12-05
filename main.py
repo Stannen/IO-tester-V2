@@ -1,48 +1,49 @@
-import pandas as pd
-import yaml 
-import functions as fc 
-import fitz
-import io
-import numpy as np 
-
-from datetime import datetime 
-
-from flask import Flask, render_template, send_from_directory, jsonify, request
-from waitress import serve
-
-from tkinter import *
-import customtkinter
-
-from PIL import Image
-import pytesseract #https://www.geeksforgeeks.org/python/introduction-to-python-pytesseract-package/
-
-import logging
-import time 
 import sys
-import importlib
-from copy import deepcopy
-
-#pip install qrcode
-#Ctrl+Shift+P
+import logging 
 
 
-logging.basicConfig(filename='log.log', level=logging.DEBUG,
-        format='%(asctime)s %(levelname)s:%(message)s')
-
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 def log(msg, level='error'): 
-        levels = ['error', 'info']
+    logging.__dict__[level](f' -- {datetime.now()} -- {msg}')
 
-        if levels.count(level) != 1:
-            logging.error(f" -- {datetime.now()} -- level: {level} don't exist")
-            return 
+    if level == 'error':
+        sys.exit("Stop het programma hier")
+        
+try:
+    from imports import import_modules
+except ImportError as e:
+    log(f"Kon import_modules niet importeren uit imports.py error: {e}")
 
-        logging.__dict__[level](f' -- {datetime.now()} -- {msg}')
+i, error = import_modules('main.py', ["pathlib","os","pandas","fitz","io","datetime","flask","waitress","tkinter","customtkinter","PIL","pytesseract","time","importlib","copy","subprocess","pysoem","functions"])
 
-        if level == 'error':
-            while True:
-                time.sleep(2)
-                print(f'Fix before restart Error: {msg}')
+if error:
+    log('check which imports are missing')
+
+Path            = i['pathlib'].Path
+os              = i['os']
+pd              = i['pandas']
+fitz            = i['fitz']
+io              = i['io']
+datetime        = i['datetime'].datetime
+flask           = i['flask']
+serve           = i['waitress'].serve
+tkinter         = i['tkinter']
+customtkinter   = i['customtkinter']
+Image           = i['PIL'].Image
+pytesseract     = i['pytesseract']
+time            = i['time']
+importlib       = i['importlib']
+deepcopy        = i['copy'].deepcopy
+subprocess      = i['subprocess']
+pysoem          = i['pysoem']
+fc              = i['functions']
+
+render_template     = flask.render_template
+send_from_directory = flask.send_from_directory
 
 
 class Progression():
@@ -51,7 +52,7 @@ class Progression():
         self.get_config()
 
     def get_config(self):
-        self.config = fc.yamlOperator('config', 'progression.yaml')      
+        self.config = fc.yamlOperator('defauld/config', 'progression.yaml')      
 
 
 class Schematic():
@@ -102,7 +103,7 @@ class Schematic():
         return round(x / self.page_X_pixels * 100, 2), round(y / self.page_Y_pixels * 100, 2)
 
     def get_config(self):
-        self.config = fc.yamlOperator('config', 'schematic.yaml')      
+        self.config = fc.yamlOperator('defauld/config', 'schematic.yaml')      
     
     def tkinter (self, text='', variable_type='str'):
         error = False 
@@ -223,8 +224,8 @@ class Schematic():
         pattern = r'=(?P<machine_type>[^+]+)\+(?P<kast_nr>[^/]+)/(?P<pagina_nr>\d+)(?:\.(?P<pagina_section>\d+))?'
 
         self.export_io.loc[:, ['machine_type', 'kast_nr', 'pagina_nr', 'pagina_section']] = (self.export_io['pagina_nr'].str.extract(pattern))
-        self.export_io['pagina_nr'] = self.export_io['pagina_nr'].astype('int64')
-        self.export_io['pagina_section'] = self.export_io['pagina_section'].astype('int64')
+        self.export_io.loc[:, 'pagina_nr'] = self.export_io['pagina_nr'].astype('int64')
+        self.export_io.loc[:, 'pagina_section'] = self.export_io['pagina_section'].astype('int64')
 
         self.kast_list = self.export_rack['kast_nr'].unique().tolist()
 
@@ -335,6 +336,8 @@ class Beckhoff():
         self.get_config()
         sys.path.append("beckhoff/cards")
 
+        self.master = pysoem.Master()
+
         self.cards = []
         self.supported_cards = []
         self.configuration = [] 
@@ -353,7 +356,7 @@ class Beckhoff():
 
 
     def get_config(self):
-        self.config = fc.yamlOperator('config', 'beckhoff.yaml')      
+        self.config = fc.yamlOperator('defauld/config', 'beckhoff.yaml')      
 
     def get_configuration(self, curr_rack):
         self.configuration.clear()
@@ -377,24 +380,108 @@ class Beckhoff():
                     def __init__(self):
                         self.is_defauld = True 
                 self.configuration[index][row.kaart_id] = NotSupported()
+    
+    def get_adapters(self, busid=None, search_term="Ethernet"):
+        """
+        Attach een USB device aan WSL via usbipd.
+        - busid: direct het busid opgeven (bijv. '2-3')
+        - search_term: zoekterm om automatisch busid te vinden
+        """
+        try:
+            
+            # Zoek automatisch naar het busid via usbipd list
+            cmd_list = [
+                "powershell.exe",
+                "-Command",
+                "usbipd list | Select-String '{}'".format(search_term)    
+            ]
+
+            result = subprocess.run(cmd_list, capture_output=True, text=True)
+
+            if result.returncode != 0 or not result.stdout.strip():
+                print("Geen USB device gevonden met zoekterm:", search_term)
+                return False
+            
+            # Eerste kolom is het busid
+            busid = result.stdout.strip().split()[0]
+
+            # Attach uitvoeren
+            cmd_attach = [
+                "powershell.exe",
+                "-Command",
+                f"usbipd bind --busid {busid}"
+            ]#f"usbipd attach --wsl --busid {busid}"
+            
+            result = subprocess.run(cmd_attach, capture_output=True, text=True)
+            if result.returncode == 0:
+                print(f"USB device {busid} gekoppeld aan WSL.")
+                return True
+            else:
+                print("Fout bij koppelen:", result.stderr)
+                return False
+
+        except Exception as e:
+            print("Error:", e)
+            return False
 
 
 class IO_Tester():
-    def __init__(self, name):
+    def __init__(self, name, debug_mode= False):
+        self.system_oke = False 
+        self.system_default = True 
+        self.system_path = os.path.dirname(os.path.abspath(__file__))
+        self.resource_path = None 
+
+        if hasattr(sys, "_MEIPASS"):
+            self.resource_path = Path(sys._MEIPASS)
+        else:
+            self.resource_path = self.system_path
+
+        self.check_system()
+
+        #self.sch    = Schematic(self)
+        #self.io     = Beckhoff(self)
+        #self.pro    = Progression(self)
+        #self.app    = flask.Flask(name)
+
+        #self.get_config()
+
+        #self.io.get_adapters(search_term="Realtek USB GbE Family Controller #3")
+         #--disable exports--
+        #self.get_progress_id()
+        #self.sch.get_imports(self.progress_path)
+
+        #--disable server--
+        #self.routing()
+        #self.app.run(debug=debug_mode)
+    
+    def check_system(self):
+        system_folders = ({'beckhoff/cards': ['EL1xxx.py','EL2xxx.py'],
+                           'default/config': ['beckhoff.yaml','IOTester.yaml','progression.yaml','schematic.yaml'],
+                           'default/export/excel': ['V4553  IO lijst.xlsx','V4553  Rack opbouw.xlsx'],
+                           'default/export/schematic': ['V4553 00.1.pdf'],
+
+                           'static/css': ['end_page.css','home_page.css','schematic_page.css'],
+                           'static/js': ['home_page.js','schematic_page.js'],
+                           'templates': ['end_page.html','home_page.html','schematic_page.html'],
+                            })
+        config_folders = ({'config': ['beckhoff.yaml','IOTester.yaml','progression.yaml','schematic.yaml']})
+
+
+        system_oke = fc.check_folders(self.resource_path, system_folders)
+
+        if not system_oke:
+            log('Het systeem is niet oke. Check logs')
+
+        self.system_default = fc.check_folders(self.system_path, system_folders)
         
-        self.sch    = Schematic(self)
-        self.io     = Beckhoff(self)
-        self.pro    = Progression(self)
-        self.app    = Flask(name)
+        if not self.system_default:
+            log('System is running in defauld', level='info')
 
-        self.get_config()
-        self.get_progress_id()
 
-        self.sch.get_imports(self.progress_path)
-
-        self.routing()
-        self.app.run(debug=True)
         
+    
+
 
     def get_config(self):
         self.config = fc.yamlOperator('config', 'IOTester.yaml')      
@@ -456,9 +543,9 @@ class IO_Tester():
             render = self.sch.set_page()
             return render_template('schematic_page.html', **render)
         
-        @self.app.route("/saved_progress/progress0/schematic_jpg/<filename>")
+        @self.app.route("/defauld/saved_progress/progress0/schematic_jpg/<filename>")
         def schematic_images(filename):
-            return send_from_directory("saved_progress/progress0/schematic_jpg", filename)
+            return send_from_directory("defauld/saved_progress/progress0/schematic_jpg", filename)
         
         @self.app.route("/dynamic_button/<name>")
         def dynamic_button(name):
@@ -467,7 +554,7 @@ class IO_Tester():
 
         @self.app.route("/dynamic_input/<name>", methods=["POST"])
         def dynamic_input(name):
-            text = request.form.get(name)
+            text = flask.request.form.get(name)
             render = self.sch.set_page()
             return render_template('schematic_page.html', **render)
         
@@ -479,11 +566,11 @@ class IO_Tester():
             texts = [
                 {"id": "text0", "value": "System OK"}
             ]
-            return jsonify({"lamps": lamps, "texts": texts})
+            return flask.jsonify({"lamps": lamps, "texts": texts})
         
         @self.app.route("/list_picker/<name>")
         def list_picker(name):
-            render, new_item = None, request.args.get("value")
+            render, new_item = None, flask.request.args.get("value")
     
             if name == 'kast':
                 self.sch.curr_kast = new_item

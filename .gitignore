@@ -23,5 +23,8 @@ env/
 # =========================================
 # OS-specifiek
 # =========================================
-saved_progress/
+defauld/saved_progress/
+defauld/export/
+
+
 

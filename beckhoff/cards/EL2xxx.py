@@ -4,3 +4,8 @@ class EL2xxx():
         self.is_defauld = False 
         self.supported = ['EL2008'] 
         self.element_type = 'button' 
+
+    def setup(self):
+        pass 
+    def update(self):
+        pass 
