@@ -2,7 +2,7 @@
 order_id_request_text: Enter your order without a V character 
 
 export_rack:
-  path: /defauld/export/excel
+  path: defauld/export/excel
   columns: [machine_type, kast_nr, kaart_id, kaart_type, pagina_nr, address]
   elements_to_request:
    - variable: order_id
@@ -15,7 +15,7 @@ export_rack:
 
 
 export_io:
-  path: /defauld/export/excel
+  path: defauld/export/excel
   columns: [machine_type, kast_nr, pagina_nr, kaart_id, kaart_port, port_info, info]
   elements_to_request:
    - variable: order_id
@@ -28,7 +28,7 @@ export_io:
 
 
 export_schematic:
-  path: /defauld/export/schematic
+  path: defauld/export/schematic
   elements_to_request:
    - variable: order_id
      text: Enter your order without a V character

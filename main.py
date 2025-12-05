@@ -505,9 +505,9 @@ class IO_Tester():
             render = self.sch.set_page()
             return render_template('schematic_page.html', **render)
         
-        @self.app.route("/saved_progress/progress0/schematic_jpg/<filename>")
+        @self.app.route("/defauld/saved_progress/progress0/schematic_jpg/<filename>")
         def schematic_images(filename):
-            return send_from_directory("saved_progress/progress0/schematic_jpg", filename)
+            return send_from_directory("defauld/saved_progress/progress0/schematic_jpg", filename)
         
         @self.app.route("/dynamic_button/<name>")
         def dynamic_button(name):
