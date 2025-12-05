@@ -425,6 +425,9 @@ class IO_Tester():
 
         self.check_system()
 
+        while True:
+            pass 
+
         #self.sch    = Schematic(self)
         #self.io     = Beckhoff(self)
         #self.pro    = Progression(self)
