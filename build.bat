@@ -10,6 +10,7 @@ set ENTRY=%PROJECT_PATH%\main.py
 set APPNAME=mijn_app
 set DIST_DIR=%PROJECT_PATH%\release
 set EXTRA_DIRS=beckhoff;default;static;templates
+set EXTRA_EXECUTABLE_DIRS=beckhoff;default;static;templates
 
 echo ============================================
 echo ">>> Start build voor %APPNAME%"
@@ -20,9 +21,17 @@ echo ">>> Opruimen oude build..."
 rmdir /s /q "%PROJECT_PATH%\build" "%PROJECT_PATH%\dist" "%DIST_DIR%" 2>nul
 del "%PROJECT_PATH%\*.spec" 2>nul
 
+
+set ADDDATA=
+for %%d in (%EXTRA_EXECUTABLE_DIRS%) do (
+    set ADDDATA=!ADDDATA! --add-data "%PROJECT_PATH%\%%d;%%d"
+)
+
 REM Bouwen met PyInstaller
+REM python -m PyInstaller --onefile --name %APPNAME% "%ENTRY%" >> build.log 2>&1
 echo ">>> Bouwen met PyInstaller..."
-python -m PyInstaller --onefile --name %APPNAME% "%ENTRY%" >> build.log 2>&1
+
+python -m PyInstaller --onefile --name %APPNAME% %ADDDATA% "%ENTRY%" >> build.log 2>&1
 if errorlevel 1 (
     echo FOUT: PyInstaller build is mislukt.
     exit /b 1
