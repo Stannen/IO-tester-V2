@@ -26,26 +26,24 @@ logging.basicConfig(
 )
 
 def log(msg, level='error'): 
-    logging.__dict__[level](f' -- {datetime.now()} -- {msg}')
+    logging.__dict__[level](msg)
 
     if level == 'error':
-        sys.exit("Stop het programma hier")
+        while True:
+            pass
 
 
 class Progression():
-    def __init__(self, T):
+    def __init__(self, T, config):
         self.t = T
-        self.get_config()
-
-    def get_config(self):
-        self.config = fc.yamlOperator('defauld/config', 'progression.yaml')      
+        self.config = config  
 
 
 class Schematic():
-    def __init__(self, T):
+    def __init__(self, T, config):
         self.t = T
-        self.get_config()
-        self.order_id = 4553 #self.tkinter(self.config['order_id_request_text'], 'int')
+        self.config = config 
+        #self.order_id = self.tkinter(self.config['order_id_request_text'], 'int')
 
         self.curr_page = 0
         self.curr_background = None 
@@ -86,10 +84,7 @@ class Schematic():
         self.alignment_elements = [] 
 
     def to_percent(self, x, y):
-        return round(x / self.page_X_pixels * 100, 2), round(y / self.page_Y_pixels * 100, 2)
-
-    def get_config(self):
-        self.config = fc.yamlOperator('defauld/config', 'schematic.yaml')      
+        return round(x / self.page_X_pixels * 100, 2), round(y / self.page_Y_pixels * 100, 2)    
     
     def tkinter (self, text='', variable_type='str'):
         error = False 
@@ -112,23 +107,31 @@ class Schematic():
 
             return user_input
 
-    
-    def get_imports(self, progress_path):
-        imports_oke = True 
 
-        elements_requested = {'order_id':self.order_id}
+    def check_export_path(self):
+        export_path_oke = True 
+
+        for export_id in ['rack','io','schematic']:        
+            config = self.config['export_' + export_id]
+
+            if not fc.dirOperator(config['path'], False):
+                export_path_oke = False 
+                break 
+        return export_path_oke
+
+
+    def get_imports(self):
+        exports_oke = True 
        
         for export_id in ['rack','io','schematic']:        
             config = self.config['export_' + export_id]
-           
-            for request in config['elements_to_request']:
-                if list(elements_requested.keys()).count(request['variable']) == 1:
-                    continue
 
-                elements_requested[request['variable']] = self.tkinter(request['text'], request['variable_type'])
-        
-            file_list = fc.fileOperator(config['path'], True)
-            
+            path        = self.t.resource_path if self.t.system_default else config['path']
+            file_list   = fc.fileOperator(path, True) 
+
+            os.path.join(self.t.resource_path, "beckhoff/cards")
+
+            file_selected = False            
             for file in file_list:
                 correct_file_selected = True 
 
@@ -141,7 +144,7 @@ class Schematic():
                         correct_file_selected = False 
 
                 for item in config['elements_to_request']:                 
-                    item = elements_requested[item['variable']]
+                    item = self.t.requested_elements[item['variable']]
                     if file.count(str(item)) == 0:
                         correct_file_selected = False 
 
@@ -149,13 +152,14 @@ class Schematic():
                     continue
 
                 if export_id == 'schematic':
-                    continue
                     if not config['extension_type'] == '.pdf':
                         log('extension_type .pdf is only supported for the schematic')
                     
                     doc = fitz.open(config['path'] + '/' + file + '.pdf')
 
-                    fc.dirOperator(progress_path + '/schematic_jpg')
+                    fc.dirOperator(self.t.progress_path + '/schematic_jpg')
+                    self.exe_path       = None 
+                    self.resource_path  = None 
 
                     for i, page in enumerate(doc):
                         pix = page.get_pixmap()
@@ -190,7 +194,7 @@ class Schematic():
                             continue
                         
                         jpg_name = fc.formatOperator(self.config['export_jpg']['format'], format_items)
-                        pix.save(progress_path + '/schematic_jpg/' + jpg_name +'.jpg')
+                        pix.save(self.t.progress_path + '/schematic_jpg/' + jpg_name +'.jpg')
 
 
                 else:
@@ -205,31 +209,38 @@ class Schematic():
                     data.columns = config['columns']
                     self.__dict__['export_'+ export_id] = data
 
-
-        self.export_rack = self.export_rack[self.export_rack['kaart_type'].isin(self.t.io.supported_cards)]
-        self.export_io = self.export_io[self.export_io['kaart_id'].isin(self.export_rack['kaart_id'])]
-
-        pattern = r'=(?P<machine_type>[^+]+)\+(?P<kast_nr>[^/]+)/(?P<pagina_nr>\d+)(?:\.(?P<pagina_section>\d+))?'
-
-        self.export_io.loc[:, ['machine_type', 'kast_nr', 'pagina_nr', 'pagina_section']] = (self.export_io['pagina_nr'].str.extract(pattern))
-        self.export_io.loc[:, 'pagina_nr'] = self.export_io['pagina_nr'].astype('int64')
-        self.export_io.loc[:, 'pagina_section'] = self.export_io['pagina_section'].astype('int64')
-
-        self.kast_list = self.export_rack['kast_nr'].unique().tolist()
-
-        x_pos = self.config['page_section']['X_pos']
-        max_steps = sum(x_pos)
-        pix_step = self.jpg_X_pixels / max_steps
-        pix_count = 0 
+                file_selected = True 
+            
+            if not file_selected:
+                log(f'Export: {export_id} not oke', level='info')
+                exports_oke = False 
+                break 
         
-        for i in range(len(x_pos)):
-            pix_count += x_pos[i] * pix_step
+        if exports_oke:
+            self.export_rack = self.export_rack[self.export_rack['kaart_type'].isin(self.t.io.supported_cards)]
+            self.export_io = self.export_io[self.export_io['kaart_id'].isin(self.export_rack['kaart_id'])]
 
-            pix_begin = 0 if i == 0 else self.sections[-1]['end']
-            pix_end = pix_count 
-            self.sections.append({'begin':pix_begin, 'end':pix_end})
+            pattern = r'=(?P<machine_type>[^+]+)\+(?P<kast_nr>[^/]+)/(?P<pagina_nr>\d+)(?:\.(?P<pagina_section>\d+))?'
 
-        return 
+            self.export_io.loc[:, ['machine_type', 'kast_nr', 'pagina_nr', 'pagina_section']] = (self.export_io['pagina_nr'].str.extract(pattern))
+            self.export_io.loc[:, 'pagina_nr'] = self.export_io['pagina_nr'].astype('int64')
+            self.export_io.loc[:, 'pagina_section'] = self.export_io['pagina_section'].astype('int64')
+
+            self.kast_list = self.export_rack['kast_nr'].unique().tolist()
+
+            x_pos = self.config['page_section']['X_pos']
+            max_steps = sum(x_pos)
+            pix_step = self.jpg_X_pixels / max_steps
+            pix_count = 0 
+            
+            for i in range(len(x_pos)):
+                pix_count += x_pos[i] * pix_step
+
+                pix_begin = 0 if i == 0 else self.sections[-1]['end']
+                pix_end = pix_count 
+                self.sections.append({'begin':pix_begin, 'end':pix_end})
+
+        return exports_oke
 
 
     def set_page_elements(self):
@@ -321,10 +332,12 @@ class Schematic():
 
 
 class Beckhoff():
-    def __init__(self, T):
-        self.t = T
-        self.get_config()
-        sys.path.append("beckhoff/cards")
+    def __init__(self, T, config):
+        self.t      = T
+        self.config = config 
+
+        path = os.path.join(self.t.resource_path, "beckhoff/cards")
+        sys.path.append(path)
 
         self.master = pysoem.Master()
 
@@ -332,7 +345,7 @@ class Beckhoff():
         self.supported_cards = []
         self.configuration = [] 
 
-        for card in fc.fileOperator('beckhoff/cards', True, False):
+        for card in fc.fileOperator(path, True, False):
             card, extention = card.split('.')
 
             if not extention == 'py':
@@ -342,11 +355,7 @@ class Beckhoff():
             card = getattr(module, card)()
 
             self.supported_cards += card.supported
-            self.cards.append(card)
-
-
-    def get_config(self):
-        self.config = fc.yamlOperator('defauld/config', 'beckhoff.yaml')      
+            self.cards.append(card)   
 
     def get_configuration(self, curr_rack):
         self.configuration.clear()
@@ -417,42 +426,53 @@ class Beckhoff():
 
 class IO_Tester():
     def __init__(self, name, debug_mode= False):
+        self.name = name 
         self.system_default = True 
-        self.exe_path = None 
-        self.resource_path = None 
+        self.exe_path       = None 
+        self.resource_path  = None 
+        self.progress_path  = None
+        self.progress_resume = False  
+        self.requested_elements = {}
 
         if hasattr(sys, "_MEIPASS"):
-            # Draait als PyInstaller executable (Windows)
             self.exe_path = os.path.dirname(sys.executable)
             self.resource_path = Path(sys._MEIPASS)
+
         else:
-            # Normale Python run (Windows of WSL/Linux)
-            # __file__ werkt hier wel
             script_path = Path(__file__).resolve()
-            self.exe_path = str(script_path.parent)
+            self.exe_path = script_path.parent
             self.resource_path = script_path.parent
-            
+    
         self.check_system()
-
-        while True:
-            pass 
-
-        #self.sch    = Schematic(self)
-        #self.io     = Beckhoff(self)
-        #self.pro    = Progression(self)
-        #self.app    = Flask(name)
-
-        #self.get_config()
-
-        #self.io.get_adapters(search_term="Realtek USB GbE Family Controller #3")
-         #--disable exports--
-        #self.get_progress_id()
-        #self.sch.get_imports(self.progress_path)
-
+        self.get_progress_id()
+        exports_oke = self.sch.get_imports()
+        
         #--disable server--
         #self.routing()
         #self.app.run(debug=debug_mode)
-    
+
+    def request_info(self):
+        for export_id in ['rack','io','schematic']:               
+            config = self.sch.config['export_' + export_id]
+           
+            for request in config['elements_to_request']:
+                if list(self.requested_elements.keys()).count(request['variable']) == 1:
+                    continue
+
+                self.requested_elements[request['variable']] = self.tkinter(request['text'], request['variable_type'])
+
+
+    def request_elements(self):
+        for export_id in ['rack','io','schematic']:               
+            config = self.sch.config['export_' + export_id]
+           
+            for request in config['elements_to_request']:
+                if list(self.requested_elements.keys()).count(request['variable']) == 1:
+                    continue
+
+                self.requested_elements[request['variable']] = self.tkinter(request['text'], request['variable_type'])
+
+
     def check_system(self):
         system_folders = ({'beckhoff/cards': ['EL1xxx.py','EL2xxx.py'],
                            'default/config': ['beckhoff.yaml','IOTester.yaml','progression.yaml','schematic.yaml'],
@@ -465,49 +485,58 @@ class IO_Tester():
                             })
         config_folders = ({'config': ['beckhoff.yaml','IOTester.yaml','progression.yaml','schematic.yaml']})
 
-
-        system_oke = fc.check_folders(self.resource_path, system_folders)
-
-        if not system_oke:
+        if not fc.check_folders(self.resource_path, system_folders):
             log('Het systeem is niet oke. Check logs')
 
-        self.system_default = fc.check_folders(self.exe_path, config_folders)
-
-
-        #export_rack
-        #export_io
-        #export_schematic
+        self.system_default = not fc.check_folders(self.exe_path, config_folders)
 
         if self.system_default:
-            log('Custom config found. System is not running in default', level='info')
-        else:
             log('Custom config not found. System is running in default', level='info')
+            self.requested_elements['order_id'] = 4553
 
+        else:
+            self.request_elements()
+            export_oke = self.sch.check_export_path()
 
+            if not export_oke:
+                log('The export path of the custom config is not oke. System is running in default', level='info')
+                self.system_default = True 
 
+        config_folder = 'default/config' if self.system_default else 'config'
+        config_files = system_folders[config_folder] if self.system_default else config_folders[config_folder]
+ 
+        config = {} 
+        for file in config_files:
+            name = file.split('.')[0]
+            path = os.path.join((self.resource_path if self.system_default else self.exe_path), config_folder)
+            
+            config[name] = fc.yamlOperator(path, file)
 
-
-    def get_config(self):
-        self.config = fc.yamlOperator('config', 'IOTester.yaml')      
+        self.config = config['IOTester']
+        self.sch    = Schematic(self,   config['schematic'])
+        self.io     = Beckhoff(self,    config['beckhoff'])
+        self.pro    = Progression(self, config['progression'])
+        self.app    = Flask(self.name) 
 
 
     def get_progress_id(self):
-        dir_list = fc.dirOperator('saved_progress', make=False, returnList=True)
+        path = os.path.join(self.exe_path, 'saved_progress')
 
-        self.progress_id, resume_process = len(dir_list), False 
+        dir_list                            = fc.dirOperator(path, make=False, returnList=True)
+        self.progress_id, resume_process    = len(dir_list), False 
 
         for dir_ in dir_list:
-            info = fc.yamlOperator('saved_progress' + '/' + dir_, 'info.yaml')  
-            if info['order_id'] == self.sch.order_id:
+            info = fc.yamlOperator(os.path.join(path, dir_), 'info.yaml')  
+            if info['order_id'] == self.requested_elements['order_id']:
                 self.progress_id = info['progress_id']
                 resume_process = True 
                 break 
-
-        self.progress_path = 'saved_progress/progress' + str(self.progress_id)
+        
+        self.progress_path = os.path.join(path, 'progress' + str(self.progress_id))
 
         if not resume_process:            
             fc.dirOperator(self.progress_path)
-            info = {'progress_id':self.progress_id, 'order_id':self.sch.order_id, 'last_updated':datetime.now().strftime('%d/%m/%y')}
+            info = {'progress_id':self.progress_id, 'order_id':self.requested_elements['order_id'], 'last_updated':datetime.now().strftime('%d/%m/%y')}
             fc.yamlOperator(self.progress_path, 'info.yaml', info)
 
 
@@ -588,7 +617,8 @@ class IO_Tester():
             return render_template('schematic_page.html', **render)
         
 if __name__ == '__main__':
-    IO_Tester(__name__)    
+    t = IO_Tester(__name__)
+ 
 
 
 

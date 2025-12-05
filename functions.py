@@ -13,15 +13,7 @@ def dirOperator(path, make=True, returnList=False):
         returnList=True and Make=False (return list of all the folders)'''        
     
     if make:
-        splitedPath = path.split('/')
-        scanPath = '' 
-
-        for i in range(0, len(splitedPath)):
-            if i == 0: scanPath = splitedPath[i]               
-            else: scanPath += f'/{splitedPath[i]}'
-                
-            if not os.path.isdir(scanPath):
-                os.mkdir(scanPath)  
+        os.makedirs(path, exist_ok=True)
 
     elif returnList:
         if os.path.isdir(path):
@@ -125,7 +117,7 @@ def yamlOperator(path, fileName, data=None):
     if fileName.count('.') == 0:
         fileName += '.yaml'
 
-    filePath = f'{path}/{fileName}'
+    filePath = os.path.join(path, fileName) #f'{path}/{fileName}'
 
     if data == None:
         if not os.path.isfile(filePath):
@@ -218,7 +210,7 @@ def formatOperator(format, formatItems=None, formatToDecrypt=None):
                
     return returnData
 
-def check_folders(base_path, system_folders, found_msg='Bestand gevonden:', not_found_msg='Bestand niet gevonden:'):
+def check_folders(base_path, system_folders, found_msg='Bestand gevonden:', not_found_msg='Bestand niet gevonden'):
     all_ok = True
     for folder, files in system_folders.items():
         folder_path = os.path.join(base_path, folder)
