@@ -1,7 +1,10 @@
+
 @echo off
 REM build.bat - Maak een standalone distributie met PyInstaller en extra folders
 
-setlocal
+REM setlocal
+setlocal enabledelayedexpansion
+
 
 REM C:\Users\Hacker\OneDrive\Documenten\GitHub\IO-tester-V2
 
@@ -28,7 +31,6 @@ for %%d in (%EXTRA_EXECUTABLE_DIRS%) do (
 )
 
 REM Bouwen met PyInstaller
-REM python -m PyInstaller --onefile --name %APPNAME% "%ENTRY%" >> build.log 2>&1
 echo ">>> Bouwen met PyInstaller..."
 
 python -m PyInstaller --onefile --name %APPNAME% %ADDDATA% "%ENTRY%" >> build.log 2>&1
