@@ -1,6 +1,24 @@
 import sys
 import logging 
+import os  
+import fitz
+import io
+import tkinter
+import customtkinter
+import pysoem 
+import subprocess
+import time 
+import importlib
+import pytesseract
+import functions as fc 
+import pandas as pd 
 
+from pathlib import Path 
+from datetime import datetime
+from flask import Flask, render_template, send_from_directory, request, jsonify
+from waitress import serve
+from PIL import Image
+from copy import deepcopy
 
 logging.basicConfig(
     level=logging.INFO,
@@ -12,38 +30,6 @@ def log(msg, level='error'):
 
     if level == 'error':
         sys.exit("Stop het programma hier")
-        
-try:
-    from imports import import_modules
-except ImportError as e:
-    log(f"Kon import_modules niet importeren uit imports.py error: {e}")
-
-i, error = import_modules('main.py', ["pathlib","os","pandas","fitz","io","datetime","flask","waitress","tkinter","customtkinter","PIL","pytesseract","time","importlib","copy","subprocess","pysoem","functions"])
-
-if error:
-    log('check which imports are missing')
-
-Path            = i['pathlib'].Path
-os              = i['os']
-pd              = i['pandas']
-fitz            = i['fitz']
-io              = i['io']
-datetime        = i['datetime'].datetime
-flask           = i['flask']
-serve           = i['waitress'].serve
-tkinter         = i['tkinter']
-customtkinter   = i['customtkinter']
-Image           = i['PIL'].Image
-pytesseract     = i['pytesseract']
-time            = i['time']
-importlib       = i['importlib']
-deepcopy        = i['copy'].deepcopy
-subprocess      = i['subprocess']
-pysoem          = i['pysoem']
-fc              = i['functions']
-
-render_template     = flask.render_template
-send_from_directory = flask.send_from_directory
 
 
 class Progression():
@@ -442,7 +428,7 @@ class IO_Tester():
         #self.sch    = Schematic(self)
         #self.io     = Beckhoff(self)
         #self.pro    = Progression(self)
-        #self.app    = flask.Flask(name)
+        #self.app    = Flask(name)
 
         #self.get_config()
 
@@ -554,7 +540,7 @@ class IO_Tester():
 
         @self.app.route("/dynamic_input/<name>", methods=["POST"])
         def dynamic_input(name):
-            text = flask.request.form.get(name)
+            text = request.form.get(name)
             render = self.sch.set_page()
             return render_template('schematic_page.html', **render)
         
@@ -566,11 +552,11 @@ class IO_Tester():
             texts = [
                 {"id": "text0", "value": "System OK"}
             ]
-            return flask.jsonify({"lamps": lamps, "texts": texts})
+            return jsonify({"lamps": lamps, "texts": texts})
         
         @self.app.route("/list_picker/<name>")
         def list_picker(name):
-            render, new_item = None, flask.request.args.get("value")
+            render, new_item = None, request.args.get("value")
     
             if name == 'kast':
                 self.sch.curr_kast = new_item
