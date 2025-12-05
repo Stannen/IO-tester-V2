@@ -114,6 +114,8 @@ class Schematic():
 
     
     def get_imports(self, progress_path):
+        imports_oke = True 
+
         elements_requested = {'order_id':self.order_id}
        
         for export_id in ['rack','io','schematic']:        
@@ -226,6 +228,8 @@ class Schematic():
             pix_begin = 0 if i == 0 else self.sections[-1]['end']
             pix_end = pix_count 
             self.sections.append({'begin':pix_begin, 'end':pix_end})
+
+        return 
 
 
     def set_page_elements(self):
@@ -413,16 +417,21 @@ class Beckhoff():
 
 class IO_Tester():
     def __init__(self, name, debug_mode= False):
-        self.system_oke = False 
         self.system_default = True 
-        self.system_path = os.path.dirname(os.path.abspath(__file__))
+        self.exe_path = None 
         self.resource_path = None 
 
         if hasattr(sys, "_MEIPASS"):
+            # Draait als PyInstaller executable (Windows)
+            self.exe_path = os.path.dirname(sys.executable)
             self.resource_path = Path(sys._MEIPASS)
         else:
-            self.resource_path = self.system_path
-
+            # Normale Python run (Windows of WSL/Linux)
+            # __file__ werkt hier wel
+            script_path = Path(__file__).resolve()
+            self.exe_path = str(script_path.parent)
+            self.resource_path = script_path.parent
+            
         self.check_system()
 
         while True:
@@ -462,15 +471,19 @@ class IO_Tester():
         if not system_oke:
             log('Het systeem is niet oke. Check logs')
 
-        self.system_default = fc.check_folders(self.system_path, system_folders)
-        
+        self.system_default = fc.check_folders(self.exe_path, config_folders)
+
+
+        #export_rack
+        #export_io
+        #export_schematic
+
         if self.system_default:
             log('Custom config found. System is not running in default', level='info')
         else:
             log('Custom config not found. System is running in default', level='info')
 
-        while True:
-            pass 
+
 
 
 
