@@ -6,5 +6,9 @@ class EL1xxx():
         self.element_type = 'lamp' 
 
         
+    def setup(self):
+        pass 
+    def update(self):
+        pass 
 
     
