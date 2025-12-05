@@ -26,5 +26,9 @@ env/
 defauld/saved_progress/
 defauld/export/
 
+build/
+dist/
+release/
+mijn_app.spec
 
 

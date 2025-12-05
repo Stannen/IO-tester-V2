@@ -9,7 +9,7 @@ set PROJECT_PATH=%~dp0
 set ENTRY=%PROJECT_PATH%\main.py
 set APPNAME=mijn_app
 set DIST_DIR=%PROJECT_PATH%\release
-set EXTRA_DIRS=beckhoff default static templates
+set EXTRA_DIRS=beckhoff;default;static;templates
 
 echo ============================================
 echo ">>> Start build voor %APPNAME%"
@@ -43,7 +43,7 @@ if exist "%PROJECT_PATH%\dist\%APPNAME%.exe" (
 
 REM Kopiëren extra folders
 echo ">>> Kopiëren extra folders..."
-for %%d in (saved_progress config export) do (
+for %%d in (%EXTRA_DIRS%) do (
     if exist "%PROJECT_PATH%\%%d" (
         echo - Kopieer %%d...
         xcopy "%PROJECT_PATH%\%%d" "%DIST_DIR%\%%d" /E /I /Y /Q >> build.log 2>&1
