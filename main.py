@@ -464,12 +464,14 @@ class IO_Tester():
 
         self.system_default = fc.check_folders(self.system_path, system_folders)
         
-        if not self.system_default:
-            log('System is running in defauld', level='info')
+        if self.system_default:
+            log('Custom config found. System is not running in default', level='info')
+        else:
+            log('Custom config not found. System is running in default', level='info')
 
+        while True:
+            pass 
 
-        
-    
 
 
     def get_config(self):
